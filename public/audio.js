@@ -1,10 +1,11 @@
+import { getLanguage, tr } from './i18n.js';
 const KEY='little-kingdoms-audio-v1';
 const defaults={music:0.35,effects:0.55,cutins:true,voice:false,muted:false};
 let saved;try{saved=JSON.parse(localStorage.getItem(KEY));}catch{}
 export const audioSettings={...defaults};
 for(const key of ['music','effects'])if(Number.isFinite(saved?.[key]))audioSettings[key]=Math.max(0,Math.min(1,saved[key]));
 for(const key of ['cutins','voice','muted'])if(typeof saved?.[key]==='boolean')audioSettings[key]=saved[key];
-const music=new Audio('/assets/river-oath.mp3');music.loop=true;music.preload='none';music.volume=audioSettings.music;
+const music=new Audio('/assets/asianoriental2.mp3');music.loop=true;music.preload='none';music.volume=audioSettings.music;
 music.id='game-music';music.hidden=true;document.body.append(music);
 let unlocked=false,context;
 export function saveAudio(){try{localStorage.setItem(KEY,JSON.stringify(audioSettings));}catch{}syncMusic();}
@@ -19,7 +20,8 @@ export function effect(kind='place'){
 }
 export function speak(line){
   if(!audioSettings.voice||audioSettings.muted||!('speechSynthesis'in window))return;
-  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(line);u.lang='en-US';u.rate=1.04;u.volume=audioSettings.effects;music.volume=audioSettings.music*.4;u.onend=u.onerror=syncMusic;speechSynthesis.speak(u);
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(tr(line));u.lang=getLanguage()==='zh-Hans'?'zh-CN':'en-US';const voice=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith(getLanguage()==='zh-Hans'?'zh-cn':'en'));if(voice)u.voice=voice;u.rate=1.04;u.volume=audioSettings.effects;music.volume=audioSettings.music*.4;u.onend=u.onerror=syncMusic;speechSynthesis.speak(u);
 }
 document.addEventListener('pointerdown',unlockAudio,{once:true});document.addEventListener('keydown',unlockAudio,{once:true});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&'speechSynthesis'in window)speechSynthesis.cancel();syncMusic();});
+window.addEventListener('kingdoms-languagechange',syncMusic);

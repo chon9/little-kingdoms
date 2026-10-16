@@ -48,6 +48,10 @@ try{
   if(lite){
     await until('document.querySelector("#game-music").currentTime>0.1');
     assert.equal(await evaluate('document.querySelector("#game-music").loop'),true,'bundled music plays offline');
+    const savedMatch=await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state');
+    await click('#language-switch');await until('document.documentElement.lang==="zh-Hans"');assert.match(await evaluate('document.querySelector("#turn-title").textContent'),/[\u3400-\u9fff]/,'native Chinese battle UI');
+    await click('#rules-nav');assert.match(await evaluate('document.querySelector(".comic-page h2").textContent'),/[\u3400-\u9fff]/,'native offline Chinese comic');await click('#modal-close');await click('#language-switch');
+    assert.equal(await evaluate('document.documentElement.lang'),'en');assert.deepEqual(await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state'),savedMatch,'native language changes preserve the match');
     const decoded=await evaluate(`(async()=>{const{COSMETICS}=await import('/cosmetics.js');return Promise.all(COSMETICS.map(async item=>{const image=new Image();image.src=item.image;await image.decode();return image.naturalWidth>0;}));})()`);assert.equal(decoded.filter(Boolean).length,50,'all collectible artwork is bundled in the native client');
     await click('#treasury-nav');await click('#treasury-draw');assert.equal(await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-profile-v1")).cosmetics.owned.length'),1,'native offline pull saves before the reveal');
     await click('#treasury-equip');await click('#modal-close');await click('#treasury-nav');assert.equal(await evaluate('document.querySelector("#treasury-draw").disabled'),true,'native reload/reopen cannot spend the welcome pull twice');await click('#modal-close');

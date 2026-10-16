@@ -3,6 +3,7 @@ import { evaluate } from '/ai.js';
 import { AVATARS, PROFILE_KEY, normalizeProfile, levelForXP, xpForLevel, awardMatch, avatarLine } from '/progression.js';
 import { audioSettings, saveAudio, effect, speak } from '/audio.js';
 import { comicMarkup, wireComic } from '/rulebook.js';
+import { localize } from '/i18n.js';
 import { castleMarkup, cosmeticFor, pullsAvailable } from '/cosmetics.js';
 import { openCollection } from '/collection.js';
 import { openRankings, ensureCommander, syncCommander, commanderIdentity } from '/rankings.js';
@@ -56,7 +57,7 @@ function persist() {
     if (config.mode !== 'online') localStorage.setItem('little-kingdoms-save', JSON.stringify({ schema: 1, config, state, started, snapshots: snapshots.slice(-85) }));
   } catch { /* A full or unavailable browser store must not stop a game. */ }
 }
-function toast(message) { $('toast').textContent = message; $('toast').classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('visible'), 3300); }
+function toast(message) { $('toast').textContent = message;localize($('toast')); $('toast').classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('visible'), 3300); }
 const tone=effect;
 function saveProfile(){try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch{toast('Device storage is unavailable. Progress lasts for this session.');}}
 function showTreasury(){openCollection({modal,getProfile:()=>profile,onProfileChange:next=>{profile=normalizeProfile(next);saveProfile();render();},toast,tone});}
@@ -168,7 +169,7 @@ function render(pop = false) {
     $(prefix+'-supply').style.width=(40-state.count[c])/40*100+'%';
     const player=AVATARS[avatarFor(c)]||AVATARS[0];
     const name=config.mode==='bot'?(isHuman?player.name:general(c)[0]):(config.mode==='local'?colorName(c):state.players?.[c]?.displayName||player.name);
-    $(prefix+'-name').textContent=name;const faction=document.createElement('span');faction.textContent=c===1?'蜀':'魏';$(prefix+'-name').append(' ',faction);
+    $(prefix+'-name').toggleAttribute('data-user-content',config.mode==='online'&&!!state.players?.[c]?.displayName);$(prefix+'-name').textContent=name;const faction=document.createElement('span');faction.textContent=c===1?'蜀':'魏';$(prefix+'-name').append(' ',faction);
     if(config.mode==='bot'&&!isHuman)portrait($(prefix+'-avatar'),c,config.level,emotion);
     else avatarPortrait($(prefix+'-avatar'),player.id);
     $(prefix+'-player').classList.toggle('current',started&&!state.winner&&state.turn===c);
@@ -190,6 +191,7 @@ function render(pop = false) {
   $('undo').disabled=ended?pending:!started||!snapshots.length||config.mode==='online'||pending;$('undo').innerHTML=ended?'Results':'<span>↶</span>Undo';
   $('battle-restart').hidden=!started||(config.mode==='online'&&!ended);$('battle-restart').disabled=pending;$('battle-restart').textContent=ended?(config.mode==='online'?'New duel ↗':'Play again ↻'):'Restart ↻';
   $('resign').disabled=!started||!!state.winner||pending||(config.mode==='online'&&!room?.ready);
+  localize();
 }
 
 function selectCell(i) {
@@ -255,7 +257,7 @@ function queueBot() {
 function startBattle() {
   stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;cutinCooldown=0;state={...newGame('literal'),matchId:crypto.randomUUID(),players:{[config.humanColor]:{avatar:profile.avatar,castle:profile.cosmetics.castle},...(config.mode==='local'?{[3-config.humanColor]:{castle:profile.cosmetics.castle}}:{})}};snapshots=[];selected=null;searchInfo=null;started=true;screen='battle';persist();render();playerCutin(config.humanColor,'start',true);queueBot();
 }
-function modal(html) {$('modal-content').innerHTML=html;$('modal').scrollTop=0;if(!$('modal').open)$('modal').showModal();}
+function modal(html) {$('modal-content').innerHTML=html;localize($('modal-content'));$('modal').scrollTop=0;if(!$('modal').open)$('modal').showModal();}
 function replayBattle() {
   if(pending)return;
   if(config.mode==='online') {
@@ -357,7 +359,7 @@ for(const id of['home','battle-back'])$(id).onclick=()=>{screen='lobby';render()
 for(const id of['resume','return-to-room'])$(id).onclick=()=>{screen='battle';render();};
 $('fullscreen').onclick=async()=>{try{if(window.kingdomsDesktop){await window.kingdomsDesktop.toggleFullscreen();return;}if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{toast('Fullscreen unavailable on this display.');}};
 function showSettings(){
-  modal(`<p class="eyebrow">YOUR COMMAND TENT</p><h2>${screen==='battle'?'Battle menu':'Settings'}</h2><div class="audio-settings"><label>Music · River Oath <output id="music-value">${Math.round(audioSettings.music*100)}%</output><input id="music-volume" type="range" min="0" max="100" value="${audioSettings.music*100}"></label><label>Battle effects <output id="effects-value">${Math.round(audioSettings.effects*100)}%</output><input id="effects-volume" type="range" min="0" max="100" value="${audioSettings.effects*100}"></label><p class="music-credit">An original instrumental: plucked strings, flute & gentle drums.</p></div><div class="settings-list"><button class="secondary-btn" id="setting-sound">Master audio <span>${audioSettings.muted?'Muted':'On ♫'}</span></button><button class="secondary-btn" id="setting-cutins">Anime cut-ins <span>${audioSettings.cutins?'On':'Off'}</span></button><button class="secondary-btn" id="setting-voice">Character voice <span>${audioSettings.voice?'On':'Off'}</span></button><button class="secondary-btn" id="setting-fullscreen">Fullscreen <span>${window.kingdomsDesktop?'F11 / Alt+Enter':'⛶'}</span></button><button class="secondary-btn" id="setting-home">Battle lobby <span>→</span></button><button class="secondary-btn" id="setting-rules">How to play <span>→</span></button>${installPrompt?'<button class="primary-btn" id="install-game">Install game ↓</button>':''}</div><p class="settings-hint">Character voice uses your device’s available speech voice. Bots, music and pass & play work offline in the installed game. Online duels need internet. Levels and avatars save on this device.</p>`);
+  modal(`<p class="eyebrow">YOUR COMMAND TENT</p><h2>${screen==='battle'?'Battle menu':'Settings'}</h2><div class="audio-settings"><label>Music · Asianoriental2 <output id="music-value">${Math.round(audioSettings.music*100)}%</output><input id="music-volume" type="range" min="0" max="100" value="${audioSettings.music*100}"></label><label>Battle effects <output id="effects-value">${Math.round(audioSettings.effects*100)}%</output><input id="effects-volume" type="range" min="0" max="100" value="${audioSettings.effects*100}"></label><p class="music-credit"><span>Chinese-style instrumental by Tozan.</span> <a href="https://opengameart.org/content/asianoriental2" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 1.0</a> · <a href="/assets/music-credits.txt" target="_blank" rel="noopener">Music credits</a></p></div><div class="settings-list"><button class="secondary-btn" id="setting-sound">Master audio <span>${audioSettings.muted?'Muted':'On ♫'}</span></button><button class="secondary-btn" id="setting-cutins">Anime cut-ins <span>${audioSettings.cutins?'On':'Off'}</span></button><button class="secondary-btn" id="setting-voice">Character voice <span>${audioSettings.voice?'On':'Off'}</span></button><button class="secondary-btn" id="setting-fullscreen">Fullscreen <span>${window.kingdomsDesktop?'F11 / Alt+Enter':'⛶'}</span></button><button class="secondary-btn" id="setting-home">Battle lobby <span>→</span></button><button class="secondary-btn" id="setting-rules">How to play <span>→</span></button>${installPrompt?'<button class="primary-btn" id="install-game">Install game ↓</button>':''}</div><p class="settings-hint">Character voice uses your device’s available speech voice. Bots, music and pass & play work offline in the installed game. Online duels need internet. Levels and avatars save on this device.</p>`);
   for(const key of ['music','effects'])$(key+'-volume').oninput=e=>{audioSettings[key]=Number(e.target.value)/100;audioSettings.muted=false;$(key+'-value').textContent=e.target.value+'%';saveAudio();renderSetup();};
   $('setting-sound').onclick=()=>{$('sound').click();showSettings();};$('setting-cutins').onclick=()=>{audioSettings.cutins=!audioSettings.cutins;if(!audioSettings.cutins)$('cutin').hidden=true;saveAudio();showSettings();};$('setting-voice').onclick=()=>{audioSettings.voice=!audioSettings.voice;saveAudio();if(audioSettings.voice)speak(avatarLine(profile.avatar,'start'));else if('speechSynthesis'in window)speechSynthesis.cancel();showSettings();};
   $('setting-fullscreen').onclick=()=>$('fullscreen').click();$('setting-home').onclick=()=>{$('modal').close();screen='lobby';render();};$('setting-rules').onclick=showRules;

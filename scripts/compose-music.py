@@ -1,4 +1,5 @@
-"""River Oath: original looping pentatonic game music, composed in code.
+"""Archived River Oath: original looping pentatonic game music, composed in code.
+Production BGM now uses the CC0 track credited in public/assets/music-credits.txt.
 No sampled or third-party recording. Rebuild with Python + numpy + ffmpeg.
 """
 import math, subprocess, wave

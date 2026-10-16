@@ -1,6 +1,7 @@
 import { groups, groupSafety, territories, positionName } from '/engine.js';
 import { LESSONS, createTutorial, tutorialStep, submitTutorial, advanceTutorial, restoreTutorial } from '/tutorial-model.js';
 import { effect, speak } from '/audio.js';
+import '/i18n.js';
 const $=id=>document.getElementById(id),KEY='little-kingdoms-tutorial-v1';
 let saved;try{saved=JSON.parse(localStorage.getItem(KEY));}catch{}
 const completed=new Set(Array.isArray(saved?.completed)?saved.completed.filter(id=>LESSONS.some(l=>l.id===id)):[]);
