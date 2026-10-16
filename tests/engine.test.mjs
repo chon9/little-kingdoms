@@ -8,7 +8,7 @@ function position(blue=[],orange=[],turn=1){const s=newGame();blue.forEach(i=>s.
 test('setup is 9x9, one permanent neutral wall, blue to move and 40 castles each',()=>{const s=newGame();assert.equal(s.board.length,81);assert.equal(s.board[40],3);assert.equal(s.board.filter(Boolean).length,1);assert.equal(s.turn,1);assert.deepEqual(s.count,[0,0,0]);});
 test('opening castle cannot claim the whole open board',()=>{for(const i of[0,1,10,30,41,70,80]){const s=play(newGame(),i);assert.equal(territories(s.board).scores[1],0);}});
 test('alternating moves are immutable and occupied squares are illegal',()=>{const s=newGame(),n=play(s,0);assert.equal(s.board[0],0);assert.equal(n.board[0],1);assert.equal(n.turn,2);assert.equal(n.count[1],1);assert.throws(()=>play(n,0));assert.throws(()=>play(n,40));});
-test('a single enclosed eye belongs to its surrounding castles',()=>{const s=position([10,18,20,28]);assert.equal(territories(s.board).owners[19],1);assert.equal(inspectMove({...s,turn:2},19).error,'This land is sealed by your opponent.');});
+test('a single enclosed eye belongs to its surrounding castles',()=>{const s=position([10,18,20,28]);assert.equal(territories(s.board).owners[19],1);assert.match(inspectMove({...s,turn:2},19).error,/locked for both players/);});
 
 test('one protected eye stays safe even when it is a connected group’s last liberty',()=>{
   const blue=[10,11,12,19,21,28,29,30],orange=[1,2,3,9,13,18,22,27,31,37,38,39];
@@ -16,7 +16,7 @@ test('one protected eye stays safe even when it is a connected group’s last li
     const s=color===1?position(blue,orange):position(orange,blue);
     const g=groupSafety(s).find(g=>g.color===color);assert.deepEqual(g.liberties,[20]);assert.equal(g.protected,true);assert.equal(g.threatened,false);
     assert.match(inspectMove({...s,turn:3-color},20).error,/sealed/);
-    assert.match(inspectMove({...s,turn:color},20).error,/sacrifice/,'filling your last eye is still illegal self-capture');
+    assert.match(inspectMove({...s,turn:color},20).error,/locked/,'the owner cannot fill a sealed eye');
   }
 });
 
@@ -64,3 +64,5 @@ test('all ten bots take an available immediate win',()=>{for(let l=1;l<=10;l++){
 test('tactical bots block an immediate capture threat',()=>{for(let l=3;l<=10;l++){const s=position([0],[1]);const result=chooseMove(s,l,()=>.5);assert.equal(result.move,9,`level ${l} must save A9`);}});
 test('bot strength configurations increase search budgets and depths',()=>{for(let i=1;i<10;i++){assert.ok(BOT_CONFIG[i].ms>BOT_CONFIG[i-1].ms);assert.ok(BOT_CONFIG[i].noise<BOT_CONFIG[i-1].noise);}assert.ok(BOT_CONFIG[9].depth>=8);assert.ok(BOT_CONFIG[9].extensions>=20);});
 test('bots choose legal actions over a game and preserve the neutral wall',()=>{let s=newGame();for(let p=0;p<28&&!s.winner;p++){const result=chooseMove(s,3,()=>.5);if(result.move!=='pass')assert.ok(legalMoves(s).includes(result.move));s=play(s,result.move);assert.equal(s.board[40],3);}});
+
+ test('sealed land is locked for both owners and opponents without changing points or turns',()=>{for(const owner of [1,2])for(const actor of [1,2])for(const [stones,points] of [[[10,18,20,28],[19]],[[2,10,18],[0,1,9]],[[22,30,32],[31]]]){const s=position(owner===1?stones:[],owner===2?stones:[],actor),before=JSON.stringify(s),score=scoredWinner(s);for(const i of points){assert.equal(territories(s.board).owners[i],owner);assert.match(inspectMove(s,i).error,/locked for both players/);assert.throws(()=>play(s,i),/locked/);assert.ok(!legalMoves(s).includes(i));}assert.equal(JSON.stringify(s),before);assert.deepEqual(scoredWinner(s),score);}});

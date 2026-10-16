@@ -154,14 +154,14 @@ function render(pop = false) {
     if(g.protected)g.stones.forEach(i=>protectedStones.add(i));
   }
   for(let i=0;i<81;i++) {
-    const c=state.board[i],isSelected=selected===i,cell=cells[i],ghost=isSelected&&!c;
+    const c=state.board[i],isSelected=selected===i,cell=cells[i],ghost=isSelected&&!c&&!t.owners[i];
     cell.className='cell'+(c?' '+['','blue','orange','neutral'][c]:'')+(show&&t.owners[i]?' owned-'+(t.owners[i]===1?'blue':'orange'):'')+(isSelected?' selected':'')+(ghost?' ghost '+(state.turn===1?'blue':'orange'):'')+(state.last===i?' last':'')+(danger.has(i)?' danger':'')+(pop&&state.last===i?' pop':'');
     cell.innerHTML=c===3?'<svg aria-hidden="true"><use href="#castle"/></svg>':c||ghost?castleMarkup(castleFor(c||state.turn),c||state.turn):'';
-    const desc=c===3?'Neutral shared wall':c?`${colorName(c)} castle${danger.has(i)?', danger: opponent has a legal winning capture':''}${protectedStones.has(i)?', protected by sealed territory':''}`:t.owners[i]?`${colorName(t.owners[i])} sealed territory: opponent cannot enter`:'Empty';
+    const desc=c===3?'Neutral shared wall':c?`${colorName(c)} castle${danger.has(i)?', danger: opponent has a legal winning capture':''}${protectedStones.has(i)?', protected by sealed territory':''}`:t.owners[i]?`${colorName(t.owners[i])} sealed territory: locked for both players`:'Empty';
     cell.setAttribute('aria-label',`${positionName(i)}: ${desc}${isSelected?', selected':''}`);
     cell.setAttribute('aria-pressed',String(isSelected));
     // Occupied squares stay focusable for keyboard inspection.
-    cell.setAttribute('aria-disabled',String(!!c||!ownTurn()));
+    cell.setAttribute('aria-disabled',String(!!c||!!t.owners[i]||!ownTurn()));
   }
   for(const c of [1,2]) {
     const prefix=c===1?'blue':'orange',isHuman=c===config.humanColor;
@@ -174,6 +174,10 @@ function render(pop = false) {
     else avatarPortrait($(prefix+'-avatar'),player.id);
     $(prefix+'-player').classList.toggle('current',started&&!state.winner&&state.turn===c);
   }
+  const score=scoredWinner(state),margin=score.adjusted[1]-score.adjusted[2];
+  $('lead-label').textContent=margin===0?'Level · 0':(margin>0?'Blue Lead ':'Orange Lead ')+Math.abs(margin);
+  $('lead-ribbon').dataset.leader=margin>0?'blue':margin<0?'orange':'even';
+  $('lead-ribbon').title='Current sealed territory, including Blue’s −2 handicap. Blue needs an adjusted lead of 3 to win on points. A capture wins immediately.';
   let title='Your kingdom awaits',subtitle='Begin a battle, then choose your first square.';
   if(started) {
     if(state.winner) {title=`${colorName(state.winner)} rules the riverlands`;subtitle=state.reason==='territory'?'The land has been counted. A little history is made.':state.reason==='resignation'?'A graceful retreat. Another battle awaits.':'One capture. A kingdom won.';}
@@ -198,7 +202,7 @@ function selectCell(i) {
   if(!started) {toast('Begin a battle to take your first turn.');$('begin').focus();return;}
   if(!ownTurn()) {if(!state.winner) toast(thinking?'Your general is considering a move.':'Wait for your rival’s move.');return;}
   const result=inspectMove(state,i);
-  if(result.error) {toast(result.error);return;}
+  if(result.error) {selected=null;render();toast(result.error);return;}
   if(selected===i) {act(i);return;}
   selected=i;render();
 }
@@ -304,7 +308,7 @@ function showResult() {
   const s=scoredWinner(state),win=state.winner;
   if(config.mode==='bot'&&win===config.humanColor){emotion='sad';clearTimeout(emotionTimer);emotionTimer=setTimeout(()=>{emotion='';render();},6000);render();}
   const reason=state.reason==='capture'?'An enemy group has no liberties. One capture, one kingdom.':state.reason==='simultaneous'?'Both sides lost their final liberties. The simultaneous capture rule awards the battle to Wei.':state.reason==='resignation'?'The opposing commander has laid down their banner.':'The final territories are sealed. The land has spoken.';
-  modal(`<div class="result-view"><div class="result-heading"><div id="result-portrait" class="portrait"></div><div><p class="eyebrow">${config.mode==='local'?'BATTLE COMPLETE':win===config.humanColor?'VICTORY':'ANOTHER BATTLE AWAITS'}</p><h2>${colorName(win)} rules the riverlands.</h2></div></div><div class="result-body" tabindex="0" aria-label="Battle results and rewards"><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}${config.mode==='online'?'<p>For another duel, create a new room and invite your friend again.</p>':''}<button class="resume-btn" id="result-collection">View avatar collection →</button></div><div class="result-actions"><button class="primary-btn" id="play-again">${config.mode==='online'?'New online duel ↗':'Play again ↻'}</button><button class="secondary-btn" id="result-lobby">Battle lobby →</button></div></div>`);
+  modal(`<div class="result-view ${['capture','simultaneous'].includes(state.reason)?'capture-result':''}" data-winner="${win===1?'blue':'orange'}">${['capture','simultaneous'].includes(state.reason)?`<div class="capture-callout" role="status"><span class="capture-seal" aria-hidden="true">斬</span><div><small>${state.reason==='simultaneous'?'SIMULTANEOUS CAPTURE':'DECISIVE STRIKE'}</small><strong>CASTLE FALLS!</strong><b>${win===1?'BLUE WINS BY CAPTURE':'ORANGE WINS BY CAPTURE'}</b></div></div>`:''}<div class="result-heading"><div id="result-portrait" class="portrait"></div><div><p class="eyebrow">${config.mode==='local'?'BATTLE COMPLETE':win===config.humanColor?'VICTORY':'ANOTHER BATTLE AWAITS'}</p><h2>${colorName(win)} rules the riverlands.</h2></div></div><div class="result-body" tabindex="0" aria-label="Battle results and rewards"><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}${config.mode==='online'?'<p>For another duel, create a new room and invite your friend again.</p>':''}<button class="resume-btn" id="result-collection">View avatar collection →</button></div><div class="result-actions"><button class="primary-btn" id="play-again">${config.mode==='online'?'New online duel ↗':'Play again ↻'}</button><button class="secondary-btn" id="result-lobby">Battle lobby →</button></div></div>`);
   if(config.mode==='bot'&&win!==config.humanColor)portrait($('result-portrait'),win,config.level);else avatarPortrait($('result-portrait'),avatarFor(win));
   $('result-collection').onclick=showGenerals;$('play-again').onclick=replayBattle;$('result-lobby').onclick=()=>{$('modal').close();screen='lobby';render();};$('play-again').focus({preventScroll:true});
   if(reward.level>reward.previousLevel){const bonus=document.createElement('button');bonus.className='result-pulls';bonus.textContent=`✦ +${reward.level-reward.previousLevel} level-up pull${reward.level-reward.previousLevel===1?'':'s'} · Open Treasury →`;bonus.onclick=showTreasury;$('match-reward').append(bonus);}
@@ -343,6 +347,7 @@ $('difficulty').addEventListener('change',()=>{const l=Number($('difficulty').va
 for(const [id,c]of[['choose-shu',1],['choose-wei',2]])$(id).onclick=()=>{if(config.humanColor===c)return;confirmChange(()=>{stopBot();resetEmotion();config.humanColor=c;state=newGame();started=false;screen='lobby';snapshots=[];persist();render();});};
 for(const m of['bot','local','online'])$('mode-'+m).onclick=()=>switchMode(m);
 $('begin').onclick=()=>confirmChange(startBattle);
+$('lead-ribbon').onclick=()=>toast($('lead-ribbon').title);
 $('deploy').onclick=()=>{if(state.winner){replayBattle();return;}if(!started){startBattle();return;}if(selected!==null)act(selected);};$('pass').onclick=()=>{if(state.winner){screen='lobby';render();}else act('pass');};$('battle-restart').onclick=replayBattle;
 $('undo').onclick=()=>{
   if(state.winner){showResult();return;}

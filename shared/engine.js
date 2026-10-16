@@ -55,9 +55,9 @@ export function inspectMove(state, index, territory = territories(state.board)) 
   if (state.winner) return { error: 'This battle has ended.' };
   if (!Number.isInteger(index) || index < 0 || index > 80) return { error: 'Choose a square on the board.' };
   if (state.board[index]) return { error: 'There is already a castle here.' };
-  const color = state.turn, enemy = 3 - color;
+  const color = state.turn;
   if (state.count[color] >= 40) return { error: 'All 40 castles are deployed. Pass your turn.' };
-  if (territory.owners[index] === enemy) return { error: 'This land is sealed by your opponent.' };
+  if (territory.owners[index]) return { error: 'This sealed territory is locked for both players. Keep it empty to preserve its points.' };
   const board = state.board.slice(); board[index] = color;
   const gs = groups(board), deadBlue = gs.some(g => g.color === BLUE && !g.liberties.length), deadOrange = gs.some(g => g.color === ORANGE && !g.liberties.length);
   const ownDead = color === BLUE ? deadBlue : deadOrange, enemyDead = color === BLUE ? deadOrange : deadBlue;

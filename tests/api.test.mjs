@@ -1,3 +1,4 @@
+import {newGame} from '../shared/engine.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleAPI } from '../server/api.js';
@@ -41,3 +42,5 @@ test('room avatars and match identity are shared, preserved through moves and va
   const seen=await call(store,`/api/rooms/${host.code}`,null,host.token);assert.deepEqual(seen.state.players,guest.state.players);
   for(const avatar of [-1,40,'20',{},null])assert.equal((await call(store,'/api/rooms',{hostColor:1,level:1,avatar})).status,400);
 });
+
+test('online server rejects sealed territory even for its owner and preserves room version',async()=>{for(const owner of [1,2])for(const actor of [1,2]){const store=memoryStore(),{host,guest}=await pair(store),row=store.map.get(host.code),s=newGame();for(const i of [2,10,18])s.board[i]=owner;s.count[owner]=3;s.turn=actor;row.state=JSON.stringify(s);const original=row.state,version=row.version,token=actor===1?host.token:guest.token;const bad=await call(store,`/api/rooms/${host.code}/move`,{action:0,version},token);assert.equal(bad.status,422);assert.match(bad.error,/locked for both players/);assert.equal(row.state,original);assert.equal(row.version,version);const good=await call(store,`/api/rooms/${host.code}/move`,{action:30,version},token);assert.equal(good.status,200);assert.equal(good.state.board[30],actor);}});

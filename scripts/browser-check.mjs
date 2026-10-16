@@ -121,7 +121,7 @@ try{
   await mobile.click('#battle-back');await mobile.screenshot('mobile-lobby');await mobile.click('#resume');
   // Verify the service worker actually launches the game offline from its cache.
   await mobile.evaluate('navigator.serviceWorker.ready');
-  await mobile.until(`(async()=>{const c=await caches.open('little-kingdoms-v2.6.2');return !!(await c.match('/assets/dm-sans.woff2'));})()`);
+  await mobile.until(`(async()=>{const c=await caches.open('little-kingdoms-v2.7.0');return !!(await c.match('/assets/dm-sans.woff2'));})()`);
   await mobile.send('Network.enable');await mobile.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await mobile.send('Page.reload');await wait(200);await mobile.until('document.querySelectorAll(".cell").length===81');
   await mobile.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});

@@ -160,10 +160,12 @@ const htmlPairs = [
   ['Little Kingdoms fan-game comic guide. Uses your supplied territory rules, confirmed scoring variant and Wei-wins simultaneous rule. References: <a href="https://boardgamediaries.com/great-kingdom/" target="_blank" rel="noopener">Great Kingdom overview</a> · <a href="https://boardgamegeek.com/filepage/261843/great-kingdom-english-rulebook-first-edition" target="_blank" rel="noopener">Publisher’s first-edition rulebook listing</a>. This guide is written for this app; it is not the publisher’s rulebook.','《小小王国》同人游戏漫画指南。采用你提供的领地规则、确认的计分版本，以及同时零气时魏国获胜的规则。参考：<a href="https://boardgamediaries.com/great-kingdom/" target="_blank" rel="noopener">《Great Kingdom》概览</a> · <a href="https://boardgamegeek.com/filepage/261843/great-kingdom-english-rulebook-first-edition" target="_blank" rel="noopener">出版商第一版规则书条目</a>。本指南专为此游戏编写，并非出版商原版规则书。'],
 ];
 
+pairs.push(...[["Now command Shu, the owner. Try deploying at C7 inside your own eye.","现在改由领地主人蜀国行动。试着在自己的眼位 C7 落子。"],["Blocked for the owner too. Sealed territory is locked for both players, so its points and protected eye stay intact.","领地主人也不能落子。封闭领地对双方锁定，保留领地分数与眼位保护。"],["Switch to Shu, the owner. Try deploying at A9 inside your own three-square territory.","切换到领地主人蜀国。试着在自己的三格领地内 A9 落子。"],["Blocked for the owner too. All three empty squares stay locked and keep their territory points.","领地主人也不能落子。这三格空地均已锁定，保留全部领地分数。"],["Occupied squares, the neutral castle, all sealed territory and illegal self-captures cannot be chosen.","已有城池的格子、中立城池、所有封闭领地，以及自杀式落子点，均不能选择。"],["The blue ring’s only liberty is C7. Neither player may enter this sealed square, including Shu, its owner.","蓝色城群唯一的气是 C7。双方均不能进入这个封闭格，包括领地主人蜀国。"],["Can Shu fill its own eye?","蜀国能填自己的眼吗？"],["Can Shu fill its own land?","蜀国能填自己的领地吗？"],["Your sealed eye is locked for both players. You cannot fill it by mistake, so its points and protection stay intact.","封闭眼位对双方锁定。你不会误填自己的眼位，因此领地分数与保护均会保留。"],["Sealed empty land is locked for both players, including its owner. Edges and the white castle help.","封闭空地对双方锁定，包括领地主人。边界与白色城池可协助围地。"]]);
+htmlPairs.push(...[["<b>This app’s territory-lock rule:</b> once land is sealed, <b>neither player may place inside it, including its owner.</b> Empty squares keep their points.","<b>本游戏的领地锁定规则：</b>领地一旦封闭，<b>双方均不能在其中落子，包括领地主人。</b>空格保留领地分数。"],["One square or ten: <b>sealed territory is locked for both players, including its owner.</b> Open or contested land stays playable.","无论一格还是十格：<b>封闭领地对双方锁定，包括领地主人。</b>开放或有争议的空地仍可落子。"],["A capture exception can bypass the self-capture restriction. It <b>cannot</b> bypass the lock on any sealed territory.","吃子例外可以免除自杀限制，但<b>不能</b>绕过任何封闭领地的锁定。"],["Little Kingdoms fan-game comic guide. Uses your supplied rules, the territory-lock variant for both players, confirmed scoring and Wei-wins simultaneous rule. References: <a href=\"https://boardgamediaries.com/great-kingdom/\" target=\"_blank\" rel=\"noopener\">Great Kingdom overview</a> · <a href=\"https://boardgamegeek.com/filepage/261843/great-kingdom-english-rulebook-first-edition\" target=\"_blank\" rel=\"noopener\">Publisher’s first-edition rulebook listing</a>. This guide is written for this app; it is not the publisher’s rulebook.","《小小王国》同人游戏漫画指南。采用你提供的规则、双方领地锁定变体、确认的计分版本，以及同时零气时魏国获胜的规则。参考：<a href=\"https://boardgamediaries.com/great-kingdom/\" target=\"_blank\" rel=\"noopener\">《Great Kingdom》概览</a> · <a href=\"https://boardgamegeek.com/filepage/261843/great-kingdom-english-rulebook-first-edition\" target=\"_blank\" rel=\"noopener\">出版商第一版规则书条目</a>。本指南专为此游戏编写，并非出版商原版规则书。"]]);
 const strip = text => text.replace(/<br\s*\/?\s*>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 export const htmlMessages = Object.fromEntries(htmlPairs);
 export const messages = Object.fromEntries([...pairs, ...htmlPairs.map(([en,zh])=>[strip(en),strip(zh)])]);
-for (const label of ['Try Shu at A8','Can Wei enter C7?','Try Wei at A9','Try Wei at C7','Can Wei extend to B9?','Try Wei at A7','Try the winning Wei move']) messages[label+' →']=messages[label]+' →';
+for (const label of ['Can Shu fill its own eye?','Can Shu fill its own land?','Try Shu at A8','Can Wei enter C7?','Try Wei at A9','Try Wei at C7','Can Wei extend to B9?','Try Wei at A7','Try the winning Wei move']) messages[label+' →']=messages[label]+' →';
 export const patterns = [
   ['^(✓ )?(\\d{2}) · (.+)$','$1$2 · $3'],
   ['^STEP (\\d+) / (\\d+) · (SHU · BLUE|WEI · ORANGE)$','第 $1 / $2 步 · $3'],
@@ -183,6 +185,7 @@ export const patterns = [
   ['^(.+), protected by sealed territory$','$1，受封闭领地保护'],
   ['^(.+), danger: a legal enemy capture is available$','$1，危险：敌方存在合法吃子点'],
   ['^(.+), danger: a legal winning capture is available$','$1，危险：对手可合法吃子获胜'],
+  ['^(.+\\.) (Blocked for the owner too\\..+)$','$1 $2'],
   // Blocked tutorial feedback prefixes the engine error to a full explanation.
   ['^(.+\\.) (Blocked\\. Wei cannot enter sealed Shu territory,.+)$','$1 $2'],
   ['^(.+\\.) (Blocked\\. The size does not change the rule:.+)$','$1 $2'],
@@ -190,3 +193,4 @@ export const patterns = [
   ['^(.+\\.) (Blocked\\. The neutral wall.+)$','$1 $2'],
   ['^(.+\\.) (That would leave your own group.+)$','$1 $2'],
 ];
+

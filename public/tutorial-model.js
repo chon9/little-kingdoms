@@ -10,12 +10,14 @@ export const LESSONS=[
   ]},
   {id:'single-eye',title:'Build one protected eye',comic:5,initial:()=>position(eyeRing,siege),steps:[
     {action:29,color:1,prompt:'This starting position is under siege. Close the gap at C6 to leave one empty eye at C7.',explanation:'The ring now has exactly one liberty: C7. It is sealed Shu territory, so Wei cannot enter it. Safe groups stay unmarked; no danger warning should appear.'},
-    {action:20,color:2,blocked:true,prompt:'Now you are Wei. Try deploying at C7, inside the single eye. Can a capture override the territory ban?',explanation:'Blocked. Wei cannot enter sealed Shu territory, even to claim a capture. One protected eye keeps this connected group safe.'}
+    {action:20,color:2,blocked:true,prompt:'Now you are Wei. Try deploying at C7, inside the single eye. Can a capture override the territory ban?',explanation:'Blocked. Wei cannot enter sealed Shu territory, even to claim a capture. One protected eye keeps this connected group safe.'},
+    {scene:()=>position([...eyeRing,29],siege,1),action:20,color:1,blocked:true,prompt:'Now command Shu, the owner. Try deploying at C7 inside your own eye.',explanation:'Blocked for the owner too. Sealed territory is locked for both players, so its points and protected eye stay intact.'}
   ]},
   {id:'large-territory',title:'Seal a bigger area',comic:6,initial:()=>position([2,10]),steps:[
     {action:18,color:1,prompt:'Finish the diagonal wall at A7. The top and left board edges will help you seal the corner.',explanation:'Three empty squares are now Shu territory: A9, B9 and A8. Larger sealed areas are protected too.'},
     {action:0,color:2,blocked:true,prompt:'Take Wei’s turn and try entering A9. Does having more than one empty square make invasion legal?',explanation:'Blocked. The size does not change the rule: every empty square in this sealed area is off limits to Wei.'},
-    {action:9,color:2,blocked:true,prompt:'Try another square in the same area: A8.',explanation:'Also blocked. All three squares are sealed territory, not just one special eye.'}
+    {action:9,color:2,blocked:true,prompt:'Try another square in the same area: A8.',explanation:'Also blocked. All three squares are sealed territory, not just one special eye.'},
+    {scene:()=>position([2,10,18],[],1),action:0,color:1,blocked:true,prompt:'Switch to Shu, the owner. Try deploying at A9 inside your own three-square territory.',explanation:'Blocked for the owner too. All three empty squares stay locked and keep their territory points.'}
   ]},
   {id:'danger',title:'Read danger & defend',comic:10,initial:()=>position([0],[1]),steps:[
     {action:9,color:1,prompt:'The red ! on Shu at A9 is real: Wei could capture at A8. Extend your group to A8 before that happens.',explanation:'Good defense. Your connected group now has two liberties, so the red warning clears. Continue to see Wei’s reply.',replies:[10]},

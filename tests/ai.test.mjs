@@ -49,7 +49,7 @@ test('an enclosed eye is safe and is not filled as an unnecessary defense',()=>{
 test('all ten levels pass instead of spending scored, protected territory',()=>{
   for(let level=1;level<=10;level++)for(const color of [1,2]){
     const s=settledPosition(false);s.turn=color;const t=territories(s.board);
-    assert.ok(legalMoves(s).some(i=>t.owners[i]===color),'owner entry remains legal for human players');
+    assert.ok(legalMoves(s).every(i=>!t.owners[i]),'sealed territory is locked for everyone');
     const original=s.board.slice();assert.equal(quick(s,level,35).move,'pass',`level ${level}, color ${color}`);assert.deepEqual(s.board,original);
   }
 });

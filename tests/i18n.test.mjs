@@ -22,3 +22,5 @@ test('specific tutorial, reward and accessible-name patterns take priority over 
 test('coordinates and random room codes remain unchanged inside localized gameplay messages',()=>{
   setLanguage('zh-Hans');assert.ok(tr('Deploy A9').includes('A9'));assert.ok(tr('A9: Shu castle, danger: opponent has a legal winning capture').includes('A9'));assert.ok(tr('Room code: X7A9Q2').includes('X7A9Q2'));assert.equal(tr('E5'),'E5');assert.equal(tr('ABC123'),'ABC123');setLanguage('en');
 });
+
+test('territory lock, lead ribbon and capture callouts translate completely',()=>{setLanguage('zh-Hans');for(const s of ['Blue Lead 4','Orange Lead 2','Level · 0','CASTLE FALLS!','BLUE WINS BY CAPTURE','ORANGE WINS BY CAPTURE','SIMULTANEOUS CAPTURE','Shu sealed territory: locked for both players','Can Shu fill its own eye? →','Can Shu fill its own land? →','This sealed territory is locked for both players. Keep it empty to preserve its points.'])assert.doesNotMatch(tr(s),/[A-Za-z]{2,}/,s);setLanguage('en');});
