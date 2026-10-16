@@ -1,4 +1,4 @@
-const CACHE='little-kingdoms-v2.6.1';
+const CACHE='little-kingdoms-v2.6.2';
 const COLLECTION_SHELL=['/cosmetics.js','/collection.js','/collection.css','/rankings.js','/rankings.css','/i18n.js','/i18n.css','/locales/zh-game.js','/locales/zh-rules.js','/locales/zh-collection.js','/manifest-zh-Hans.webmanifest','/assets/little-kingdoms-comic-rules-zh-Hans.pdf'];
 const COLLECTION_ART=[...Array.from({length:30},(_,i)=>'/assets/cosmetics/c'+String(i+1).padStart(2,'0')+'.webp'),...Array.from({length:20},(_,i)=>'/assets/cosmetics/b'+String(i+1).padStart(2,'0')+'.webp')];
 const GREGOR_MUSIC=["/assets/music/gq-01.mp3","/assets/music/gq-02.mp3","/assets/music/gq-03.mp3","/assets/music/gq-04.mp3","/assets/music/gq-05.mp3","/assets/music/gq-06.mp3","/assets/music/gq-07.mp3","/assets/music/gq-08.mp3","/assets/music/gq-11.mp3","/assets/music/gq-12.mp3"];

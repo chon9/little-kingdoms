@@ -121,7 +121,7 @@ try{
   await mobile.click('#battle-back');await mobile.screenshot('mobile-lobby');await mobile.click('#resume');
   // Verify the service worker actually launches the game offline from its cache.
   await mobile.evaluate('navigator.serviceWorker.ready');
-  await mobile.until(`(async()=>{const c=await caches.open('little-kingdoms-v2.6.1');return !!(await c.match('/assets/dm-sans.woff2'));})()`);
+  await mobile.until(`(async()=>{const c=await caches.open('little-kingdoms-v2.6.2');return !!(await c.match('/assets/dm-sans.woff2'));})()`);
   await mobile.send('Network.enable');await mobile.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await mobile.send('Page.reload');await wait(200);await mobile.until('document.querySelectorAll(".cell").length===81');
   await mobile.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
@@ -131,6 +131,12 @@ try{
   await mobile.until('document.querySelector("[data-index=\\"18\\"]").classList.contains("orange") && !document.querySelector("#pass").disabled',10000);
   await mobile.click('[data-index="0"]');await mobile.click('#deploy');
   await mobile.until('document.querySelector("[data-index=\\"27\\"]").classList.contains("orange") && !document.querySelector("#pass").disabled',10000);
+  // A settled board must pass through the real Worker and finish on two passes.
+  const settled=await mobile.evaluate(`(async()=>{const{newGame}=await import('/engine.js');const s=newGame();for(let i=0;i<81;i++)if(i!==40)s.board[i]=i%9<4?1:i%9===4?0:2;for(const i of [10,11,19,20,16,25])s.board[i]=0;s.count=[0,s.board.filter(c=>c===1).length,s.board.filter(c=>c===2).length];s.ply=s.count[1]+s.count[2];s.turn=2;localStorage.setItem('little-kingdoms-save',JSON.stringify({schema:1,config:{mode:'bot',level:10,humanColor:1},state:s,started:true,snapshots:[]}));return s;})()`);
+  await mobile.navigate();await mobile.until('JSON.parse(localStorage.getItem("little-kingdoms-save")).state.passes===1 && !document.querySelector("#pass").disabled');
+  assert.deepEqual(await mobile.evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state.board'),settled.board,'AI leaves its territory and settled shared spaces empty');
+  await mobile.click('#pass');await mobile.until('document.querySelector("#modal").open');
+  const settledEnd=await mobile.evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state');assert.equal(settledEnd.reason,'territory');assert.deepEqual(settledEnd.board,settled.board);assert.deepEqual(settledEnd.count,settled.count);
   // Exercise earned XP, locked/equipped avatars, their in-match identity and audio.
   const progress=await page(390,844);await progress.navigate();
   await progress.evaluate('localStorage.clear();sessionStorage.clear()');await progress.navigate();

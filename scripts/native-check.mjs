@@ -69,6 +69,9 @@ try{
   await click('#undo');assert.equal(await evaluate('document.querySelectorAll(".cell.blue,.cell.orange").length'),0);
   const defense=await evaluate(`(async()=>{const{newGame,play}=await import('/engine.js');let s=newGame();for(const move of [9,10,36,1,'pass',19])s=play(s,move);const worker=new Worker('/ai-worker.js',{type:'module'});return await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{worker.terminate();reject(new Error('Native bot timed out'));},10000);worker.onmessage=event=>{clearTimeout(timer);worker.terminate();resolve(event.data.move);};worker.onerror=error=>{clearTimeout(timer);worker.terminate();reject(new Error(error.message));};worker.postMessage({state:s,level:10});});})()`);
   assert.equal(defense,18,'packaged level 10 defends the edge trap offline');
+  const settledPass=await evaluate(`(async()=>{const{newGame}=await import('/engine.js');const s=newGame();for(let i=0;i<81;i++)if(i!==40)s.board[i]=i%9<4?1:i%9===4?0:2;for(const i of [10,11,19,20,16,25])s.board[i]=0;s.count=[0,s.board.filter(c=>c===1).length,s.board.filter(c=>c===2).length];s.ply=s.count[1]+s.count[2];const worker=new Worker('/ai-worker.js',{type:'module'});return await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{worker.terminate();reject(new Error('Endgame worker timed out'));},10000);worker.onmessage=event=>{clearTimeout(timer);worker.terminate();resolve(event.data.move);};worker.postMessage({state:s,level:10});});})()`);
+  assert.equal(settledPass,'pass','packaged AI preserves owned territory and settled shared spaces');
+
   if(lite){
     await send('Page.navigate',{url:'https://kingdoms.local/tutorial.html?lesson=single-eye'});await until('document.querySelectorAll("#tutorial-board .cell").length===81');
     await click('[data-index="29"]');await click('#tutorial-deploy');

@@ -24,6 +24,28 @@ function risk(group, territory) {
   return n <= 1 ? 20000 : n === 2 ? 2600 : n === 3 ? 450 : n === 4 ? 80 : 0;
 }
 
+function settledSharedSpaces(board, gs, territory) {
+  const safeStones=new Uint8Array(81),seen=new Uint8Array(81),settled=new Uint8Array(81);
+  for(const g of gs)if(g.liberties.some(i=>territory.owners[i]===g.color))
+    for(const i of g.stones)safeStones[i]=1;
+  for(let i=0;i<81;i++){
+    if(board[i]||territory.owners[i]||seen[i])continue;
+    const region=[i];let permanentNeutral=true,safeBoundary=true;seen[i]=1;
+    for(let k=0;k<region.length;k++){
+      let colors=0;
+      for(const n of ADJ[region[k]]){
+        if(!board[n]&&!seen[n]){seen[n]=1;region.push(n);}
+        else if(board[n]===1||board[n]===2){colors|=board[n];if(!safeStones[n])safeBoundary=false;}
+      }
+      // Every square must already touch both immutable armies. None can ever
+      // score, and protected boundary groups cannot be captured through it.
+      if(colors!==3)permanentNeutral=false;
+    }
+    if(permanentNeutral&&safeBoundary)for(const p of region)settled[p]=1;
+  }
+  return settled;
+}
+
 function influence(board, territory) {
   const distances = [null, new Uint8Array(81).fill(99), new Uint8Array(81).fill(99)];
   for (let color = 1; color <= 2; color++) {
@@ -102,6 +124,7 @@ export function chooseMove(state, level=5, rng=Math.random, now=()=>performance.
 
   function generate(s,a,{forcing=false,root=false,pv=null,timed=true}={}) {
     const color=s.turn, enemy=3-color, replies=a.wins[enemy], critical=new Set(), attack=new Set();
+    const settled=a.settledShared??=settledSharedSpaces(s.board,a.groups,a.territory);
     for(const g of a.groups) {
       if(g.color===color&&risk(g,a.territory)>0&&g.liberties.length<=3) {
         for(const i of g.liberties) {
@@ -119,13 +142,16 @@ export function chooseMove(state, level=5, rng=Math.random, now=()=>performance.
     const candidates=[];
     for(const index of indices) {
       if(timed&&(analyzed&31)===0)checkTime();
+      // Owned land is already protected and scored. Filling it spends a castle
+      // and removes a point; it cannot help capture or defend in this variant.
+      if(a.territory.owners[index]===color||settled[index])continue;
       const result=inspectMove(s,index,a.territory);if(result.error)continue;
       const next=childState(s,index,result);
       if(next.winner) {
         candidates.push({index,next,analysis:null,losing:next.winner!==color,forcing:true,critical:true,rank:next.winner===color?MATE:-MATE});continue;
       }
       const na=analyze(next,result.groups), losing=na.wins[enemy].length>0, forcingMove=na.wins[color].length>0;
-      let rank=(color===1?na.value:-na.value)+(forcingMove?1400:0)-(a.territory.owners[index]===color?70:0);
+      let rank=(color===1?na.value:-na.value)+(forcingMove?1400:0);
       if(index===pv)rank+=MATE*2;
       if(root&&cfg.noise)rank+=(rng()-.5)*cfg.noise;
       candidates.push({index,next,analysis:na,losing,forcing:forcingMove,critical:critical.has(index),rank});
@@ -133,7 +159,7 @@ export function chooseMove(state, level=5, rng=Math.random, now=()=>performance.
     if(!forcing) {
       const next=childState(s,'pass');
       const losing=next.winner?next.winner!==color:a.wins[enemy].length>0;
-      let rank=next.winner?(losing?-MATE:MATE):(color===1?a.value:-a.value)-30;
+      let rank=next.winner?(losing?-MATE:MATE):(color===1?a.value:-a.value);
       if(pv==='pass')rank+=MATE*2;
       candidates.push({index:'pass',next,analysis:next.winner?null:analyze(next,a.groups),losing,forcing:false,critical:replies.length>0,rank});
     }
@@ -142,7 +168,7 @@ export function chooseMove(state, level=5, rng=Math.random, now=()=>performance.
     if(forcing||replies.length)return list;
     // Only quiet strategic moves are beam-limited. Required defenses,
     // short connections and forcing attacks survive at every search ply.
-    let quiet=0;return list.filter(m=>m.critical||m.forcing||m.index===pv||quiet++<(root?cfg.width+6:cfg.width));
+    let quiet=0;return list.filter(m=>m.index==='pass'||m.critical||m.forcing||m.index===pv||quiet++<(root?cfg.width+6:cfg.width));
   }
 
   function quiescence(s,a,alpha,beta,left,distance) {
