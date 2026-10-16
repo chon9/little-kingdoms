@@ -5,7 +5,7 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 async function digest(token) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))), n => n.toString(16).padStart(2, '0')).join(''); }
 function randomToken() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2, '0')).join(''); }
 function randomCode() { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from(crypto.getRandomValues(new Uint8Array(6)), n => chars[n % 32]).join(''); }
-function exposed(room, color, token) { return { code: room.code, state: JSON.parse(room.state), version: room.version, ready: !!room.guestHash, color, level: room.level, ...(token ? { token } : {}) }; }
+function exposed(room, color, token) { const state=JSON.parse(room.state);return { code: room.code, state, version: room.version, ready: !!room.guestHash&&!state.roomClosed, phase:state.roomClosed?'closed':state.winner?'finished':room.guestHash?'playing':'waiting', hostColor:room.hostColor, color, level: room.level, ...(token ? { token } : {}) }; }
 function commanderLevel(xp) { let level=1;while(level<50&&xp>=80*level+20*level**2)level++;return level; }
 function publicCommander(row) { return {id:row.id,displayName:row.displayName,avatar:row.avatar,xp:row.xp,level:commanderLevel(row.xp),matches:row.matches,wins:row.wins,localWins:row.wins,localLosses:row.matches-row.wins,onlineWins:Number(row.onlineWins||0),onlineLosses:Number(row.onlineLosses||0)}; }
 const validAvatar=value=>Number.isInteger(value)&&value>=0&&value<40;
@@ -118,11 +118,12 @@ async function processAPI(request, store) {
       }
       return json({ error: 'Could not create a room. Please try again.' }, 503);
     }
-    const match = path.match(/^\/api\/rooms\/([A-Z0-9]{6})(?:\/(join|move))?$/);
+    const match = path.match(/^\/api\/rooms\/([A-Z0-9]{6})(?:\/(join|move|leave))?$/);
     if (!match) return json({ error: 'Room endpoint not found.' }, 404);
     const [, code, command] = match, room = await store.get(code);
     if (!room || room.expires <= Date.now()) return json({ error: 'Room not found or expired. Check the code or create a new room.' }, 404);
     if (command === 'join' && isPost) {
+      if (JSON.parse(room.state).roomClosed) return json({error:'This room was closed by its host. Create or join another room.'},410);
       if (room.guestHash) return json({ error: 'This room already has two commanders.' }, 409);
       if(body.avatar!==undefined&&!validAvatar(body.avatar)||!validCastle(body.castle))return json({error:'Choose a valid general avatar and castle.'},400);
       const commander=body.commanderToken===undefined?null:await commanderForToken(store,body.commanderToken);
@@ -138,7 +139,20 @@ async function processAPI(request, store) {
     const hash = await digest(token), color = hash === room.hostHash ? room.hostColor : hash === room.guestHash ? 3 - room.hostColor : null;
     if (!color) return json({ error: 'You are not a commander in this room.' }, 403);
     if (!command && request.method === 'GET') { await reconcileResult(store,JSON.parse(room.state));return json(exposed(room, color)); }
+    if (command === 'leave' && isPost) {
+      const state=JSON.parse(room.state);
+      if(state.winner||state.roomClosed)return json(exposed(room,color));
+      if(!Number.isInteger(body.version)||body.version!==room.version)return json({error:'The room changed. Check the lobby before leaving.'},409);
+      // Cancelling a waiting room earns no winner or rewards. A live departure
+      // is a resignation, even before the first move or on the rival's turn.
+      const next=room.guestHash?play({...state,turn:color},'resign'):{...state,roomClosed:true};
+      const serialized=JSON.stringify(next);
+      if(!await store.update(code,room.version,serialized))return json({error:'The room changed. Check the lobby before leaving.'},409);
+      await reconcileResult(store,next);
+      return json(exposed({...room,state:serialized,version:room.version+1},color));
+    }
     if (command !== 'move' || !isPost) return json({ error: 'Method not allowed.' }, 405);
+    if (JSON.parse(room.state).roomClosed) return json({error:'This room was closed by its host. Create or join another room.'},410);
     if (!room.guestHash) return json({ error: 'Wait for your rival to join.' }, 409);
     if (!Number.isInteger(body.version) || body.version !== room.version) return json({ error: 'The board changed. Refreshing your battlefield.' }, 409);
     if (body.action !== 'pass' && body.action !== 'resign' && (!Number.isInteger(body.action) || body.action < 0 || body.action > 80)) return json({ error: 'Choose a valid move.' }, 400);

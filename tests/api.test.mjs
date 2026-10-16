@@ -44,3 +44,23 @@ test('room avatars and match identity are shared, preserved through moves and va
 });
 
 test('online server rejects sealed territory even for its owner and preserves room version',async()=>{for(const owner of [1,2])for(const actor of [1,2]){const store=memoryStore(),{host,guest}=await pair(store),row=store.map.get(host.code),s=newGame();for(const i of [2,10,18])s.board[i]=owner;s.count[owner]=3;s.turn=actor;row.state=JSON.stringify(s);const original=row.state,version=row.version,token=actor===1?host.token:guest.token;const bad=await call(store,`/api/rooms/${host.code}/move`,{action:0,version},token);assert.equal(bad.status,422);assert.match(bad.error,/locked for both players/);assert.equal(row.state,original);assert.equal(row.version,version);const good=await call(store,`/api/rooms/${host.code}/move`,{action:30,version},token);assert.equal(good.status,200);assert.equal(good.state.board[30],actor);}});
+
+
+test('a hosted room stays waiting and rejects every game action until a rival joins',async()=>{
+  for(const hostColor of [1,2]){const store=memoryStore(),host=await call(store,'/api/rooms',{hostColor,level:5});assert.equal(host.phase,'waiting');assert.equal(host.ready,false);assert.equal(host.hostColor,hostColor);for(const action of [0,'pass','resign'])assert.equal((await call(store,`/api/rooms/${host.code}/move`,{action,version:0},host.token)).status,409);const r=await call(store,`/api/rooms/${host.code}`,null,host.token);assert.equal(r.version,0);assert.equal(r.state.ply,0);assert.equal(r.state.winner,null);}
+});
+test('closing an empty room invalidates its invitation without a match result',async()=>{
+  for(const hostColor of [1,2]){const store=memoryStore();let recorded=0;store.recordResults=async()=>{recorded++;};const host=await call(store,'/api/rooms',{hostColor,level:5}),path=`/api/rooms/${host.code}`;const closed=await call(store,path+'/leave',{version:0},host.token);assert.equal(closed.status,200);assert.equal(closed.phase,'closed');assert.equal(closed.ready,false);assert.equal(closed.state.winner,null);assert.equal(closed.state.ply,0);assert.equal(recorded,0);assert.equal((await call(store,path+'/join',{})).status,410);assert.equal((await call(store,path+'/move',{action:0,version:1},host.token)).status,410);const again=await call(store,path+'/leave',{version:0},host.token);assert.equal(again.phase,'closed');assert.equal(again.version,1);}
+});
+test('leaving a live duel resigns from either seat even before moves and outside its turn',async()=>{
+  for(const color of [1,2]){const store=memoryStore(),{host,guest}=await pair(store),path=`/api/rooms/${host.code}`;const left=await call(store,path+'/leave',{version:guest.version},color===1?host.token:guest.token);assert.equal(left.status,200);assert.equal(left.phase,'finished');assert.equal(left.state.reason,'resignation');assert.equal(left.state.winner,3-color);const rival=await call(store,path,null,color===1?guest.token:host.token);assert.deepEqual(rival.state,left.state);const again=await call(store,path+'/leave',{version:left.version},color===1?host.token:guest.token);assert.equal(again.version,left.version);assert.equal((await call(store,path+'/move',{action:0,version:left.version},guest.token)).status,409);}
+});
+test('a rival joining while the host confirms closure requires a fresh leave decision',async()=>{
+  const store=memoryStore(),{host,guest}=await pair(store),path=`/api/rooms/${host.code}`;const stale=await call(store,path+'/leave',{version:host.version},host.token);assert.equal(stale.status,409);const r=await call(store,path,null,host.token);assert.equal(r.phase,'playing');assert.equal(r.state.winner,null);assert.equal(r.version,guest.version);
+});
+test('concurrent join and close cannot leave a closed room with a live guest',async()=>{
+  const store=memoryStore(),host=await call(store,'/api/rooms',{hostColor:1,level:5}),path=`/api/rooms/${host.code}`;const [closed,joined]=await Promise.all([call(store,path+'/leave',{version:0},host.token),call(store,path+'/join',{})]);assert.equal([closed,joined].filter(r=>r.status===200).length,1);const room=await call(store,path,null,host.token);assert.ok(room.phase==='closed'||room.phase==='playing');assert.equal(room.ready,room.phase==='playing');assert.equal(room.state.winner,null);
+});
+test('leaving requires the room seat token and a current version',async()=>{
+ const store=memoryStore(),{host}=await pair(store),path=`/api/rooms/${host.code}/leave`;assert.equal((await call(store,path,{version:1})).status,401);assert.equal((await call(store,path,{version:1},'a'.repeat(64))).status,403);assert.equal((await call(store,path,{version:-1},host.token)).status,409);assert.equal((await call(store,`/api/rooms/${host.code}`,null,host.token)).state.winner,null);
+});

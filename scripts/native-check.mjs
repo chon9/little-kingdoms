@@ -84,6 +84,7 @@ try{
   if(process.argv.includes('--online')){
     await click('#battle-back');await click('#mode-online');await click('#create-room');
     await until('document.querySelector("#active-room-code").textContent.length===6');
+    assert.equal(await evaluate('document.body.dataset.screen'),'room','native host waits in the room lobby');assert.equal(await evaluate('document.querySelector("#battle-screen").hidden'),true);
     const code=await evaluate('document.querySelector("#active-room-code").textContent'),base='https://shu-wei-kingdoms.alexchon911.chatgpt.site';
     async function api(route,body,token){const r=await fetch(base+route,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});const data=await r.json();assert.equal(r.ok,true,data.error);return data;}
     const guest=await api('/api/rooms/'+code+'/join',{avatar:25});
@@ -93,12 +94,14 @@ try{
     await click('[data-index="30"]');await click('#deploy');await until('document.querySelectorAll(".cell.blue:not(.ghost)").length===1');
     const seen=await api('/api/rooms/'+code,null,guest.token);assert.equal(seen.state.board[30],1);
     await api('/api/rooms/'+code+'/move',{action:50,version:seen.version},guest.token);await until('document.querySelectorAll(".cell.orange").length===1');
+    await click('#battle-leave');await click('#cancel-leave-room');
     await click('#resign');await click('#confirm-resign');await until('document.querySelector("#modal-content").textContent.includes("Wei rules")');
     assert.equal(await evaluate('(()=>{const b=document.querySelector("#play-again").getBoundingClientRect();return b.top>=0&&b.bottom<=innerHeight;})()'),true,'next-duel action is visible without scrolling');
     await click('#modal-close');assert.equal(await evaluate('document.querySelector("#deploy").disabled'),false,'finished native board still offers a new duel');
     await click('#undo');await until('document.querySelector("#play-again")!==null');await click('#play-again');
     assert.equal(await evaluate('document.body.dataset.screen'),'lobby');assert.equal(await evaluate('document.querySelector("#create-room").hidden'),false,'native online replay opens fresh room setup');
+    await click('#create-room');await until('document.body.dataset.screen==="room"');const cancelledCode=await evaluate('document.querySelector("#lobby-room-code").textContent');await click('#room-leave');await click('#confirm-leave-room');await until('document.body.dataset.screen==="lobby"');const closedInvite=await fetch(base+'/api/rooms/'+cancelledCode+'/join',{method:'POST',body:'{}',signal:AbortSignal.timeout(20000)});assert.equal(closedInvite.status,410,'closing a native waiting room invalidates its invitation');
   }
   assert.deepEqual(errors,[],'native renderer has no uncaught errors');
-  console.log('Windows client checks passed: '+(lite?'WebView2 local virtual origin, native fullscreen button/F11/Alt+Enter/Escape, window bounds restoration, 40 avatars, offline music':'bundled app protocol')+', isolated renderer, offline launch, local bot, undo, level-10 defensive regression'+(process.argv.includes('--online')?', hosted cross-client PvP with bidirectional moves and shared avatars':'')+'.');
+  console.log('Windows client checks passed: '+(lite?'WebView2 local virtual origin, native fullscreen button/F11/Alt+Enter/Escape, window bounds restoration, 40 avatars, offline music':'bundled app protocol')+', isolated renderer, offline launch, local bot, undo, level-10 defensive regression'+(process.argv.includes('--online')?', hosted cross-client PvP, waiting lobby, visible leave/resign, closed invitations, bidirectional moves and shared avatars':'')+'.');
 }finally{ws?.close();child.kill();}

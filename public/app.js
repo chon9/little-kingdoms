@@ -38,7 +38,7 @@ const WEI = [
 const TITLES = ['Rookie','Apprentice','Sentry','Captain','Tactician','Veteran','Challenger','Vanguard','Master','Legend'];
 let config = { mode: 'bot', level: 5, humanColor: 1 }, state = newGame(), started = false;
 let selected = null, snapshots = [], thinking = false, pending = false, botWorker = null, botTimer = null, emotionTimer = null, roomTimer = null;
-let room = null, emotion = '', toastTimer, searchInfo = null, cutinTimer, cutinCooldown=0;
+let room = null, roomError = '', emotion = '', toastTimer, searchInfo = null, cutinTimer, cutinCooldown=0;
 let profile=normalizeProfile(null);
 try{profile=normalizeProfile(JSON.parse(localStorage.getItem(PROFILE_KEY)));}catch{}
 const cells = [];
@@ -134,7 +134,9 @@ function renderSetup() {
   $('setup-note').textContent=config.mode==='online'?'A private room. A worthy rival.':'40 castles. One capture. A kingdom to win.';
   document.querySelectorAll('.level-node').forEach(b=>{b.classList.toggle('current',Number(b.dataset.level)===config.level);b.setAttribute('aria-pressed',String(Number(b.dataset.level)===config.level));b.disabled=pending;});
   $('room-details').hidden=!room; $('join-form').hidden=!!room; $('create-room').hidden=!!room; document.querySelector('.or-line').hidden=!!room;
-  if(room) {$('active-room-code').textContent=room.code;$('room-status').textContent=room.ready?`Connected. You command ${colorName(config.humanColor)}.`:'Waiting for your opponent…';}
+  for(const [id,c] of [['host-blue',1],['host-orange',2]]){$(id).setAttribute('aria-pressed',String(config.humanColor===c));$(id).disabled=!!room||pending;}
+  $('online-controls').classList.toggle('in-room',!!room);
+  if(room) {$('active-room-code').textContent=room.code;$('room-status').textContent=roomError|| (room.ready?`Connected. You command ${colorName(config.humanColor)}.`:'Waiting for your opponent…');}
   document.querySelector('.emotion-label')?.remove();
   if(emotion&&config.mode==='bot') {const label=document.createElement('span');label.className='emotion-label';label.textContent=emotion==='shock'?'Wait… that was your plan?!':'My beautiful kingdom…';document.querySelector('.opponent-art-wrap').append(label);}
   $('sound').classList.toggle('on',!audioSettings.muted); $('sound').setAttribute('aria-label',audioSettings.muted?'Unmute music and effects':'Mute music and effects');
@@ -144,7 +146,7 @@ function renderSetup() {
 
 function render(pop = false) {
   document.body.classList.toggle('playing',started);
-  document.body.dataset.screen=screen;$('lobby-screen').hidden=screen!=='lobby';$('battle-screen').hidden=screen!=='battle';
+  document.body.dataset.screen=screen;$('lobby-screen').hidden=screen!=='lobby';$('battle-screen').hidden=screen!=='battle';$('room-screen').hidden=screen!=='room';renderRoomLobby();
   renderSetup();
   const boardArt=cosmeticFor(profile.cosmetics.board,'board'),boardSpace=document.querySelector('.board-space');
   boardSpace.classList.toggle('has-board-art',!!boardArt);boardSpace.style.setProperty('--board-art',boardArt?`url('/assets/cosmetics/${boardArt.id}.webp')`:'none');
@@ -194,6 +196,8 @@ function render(pop = false) {
   $('pass').disabled=ended?pending:!ownTurn();$('pass').innerHTML=ended?'Lobby<span>→</span>':'Pass<span>→</span>';
   $('undo').disabled=ended?pending:!started||!snapshots.length||config.mode==='online'||pending;$('undo').innerHTML=ended?'Results':'<span>↶</span>Undo';
   $('battle-restart').hidden=!started||(config.mode==='online'&&!ended);$('battle-restart').disabled=pending;$('battle-restart').textContent=ended?(config.mode==='online'?'New duel ↗':'Play again ↻'):'Restart ↻';
+  $('battle-leave').hidden=config.mode!=='online'||!room;$('battle-leave').disabled=pending;
+  $('battle-back').querySelector('span').textContent=room?'Room':'Lobby';
   $('resign').disabled=!started||!!state.winner||pending||(config.mode==='online'&&!room?.ready);
   localize();
 }
@@ -222,6 +226,7 @@ function reactToPressure(before, after) {
 async function act(action) {
   if(!ownTurn()&&action!=='resign')return;
   if(config.mode==='online') {
+    if(!room?.ready||state.winner||pending)return;
     pending=true;render();
     try {const result=await api(`/api/rooms/${room.code}/move`,{action,version:room.version},room.token);room.version=result.version;room.ready=result.ready;const before=state;state=result.state;selected=null;tone(action==='pass'?'pass':'place');render(true);reactPlayer(before,state);if(state.winner&&!before.winner)showResult();}
     catch(e){toast(e.message);await pollRoom();}
@@ -259,6 +264,7 @@ function queueBot() {
 }
 
 function startBattle() {
+  if(config.mode==='online'){screen=room?'room':'lobby';render();return;}
   stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;cutinCooldown=0;state={...newGame('literal'),matchId:crypto.randomUUID(),players:{[config.humanColor]:{avatar:profile.avatar,castle:profile.cosmetics.castle},...(config.mode==='local'?{[3-config.humanColor]:{castle:profile.cosmetics.castle}}:{})}};snapshots=[];selected=null;searchInfo=null;started=true;screen='battle';persist();render();playerCutin(config.humanColor,'start',true);queueBot();
 }
 function modal(html) {$('modal-content').innerHTML=html;localize($('modal-content'));$('modal').scrollTop=0;if(!$('modal').open)$('modal').showModal();}
@@ -276,6 +282,7 @@ function replayBattle() {
   $('cancel-restart').onclick=()=>$('modal').close();$('confirm-restart').onclick=restart;
 }
 function confirmChange(callback, title='A new chapter?') {
+  if(config.mode==='online'&&room){requestLeaveRoom(callback);return;}
   if(!started||state.winner||(!state.ply&&config.mode!=='online')) {callback();return;}
   modal(`<p class="eyebrow">LEAVE THIS BATTLE</p><h2>${title}</h2><p>Your current battle will end on this device.${config.mode==='online'?' Your rival can still view the room.':''}</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-change">Keep playing</button><button class="primary-btn" id="confirm-change">Continue →</button></div>`);
   $('cancel-change').onclick=()=>$('modal').close();$('confirm-change').onclick=()=>{$('modal').close();callback();};
@@ -323,11 +330,49 @@ async function api(path,body,token) {
   finally{clearTimeout(timer);}
 }
 function storeRoom() {try{const saved=JSON.stringify({...room,config});sessionStorage.setItem('little-kingdoms-room',saved);if(API_BASE)localStorage.setItem('little-kingdoms-room',saved);}catch{}}
-function stopRoom(){clearTimeout(roomTimer);roomTimer=null;room=null;try{localStorage.removeItem('little-kingdoms-room');sessionStorage.removeItem('little-kingdoms-room');}catch{}history.replaceState(null,'',location.pathname);}
+function renderRoomLobby(){
+  if(!room)return;
+  $('lobby-room-code').textContent=room.code;$('room-count').textContent=room.ready?'2 / 2':'1 / 2';
+  for(const c of [1,2]){
+    const prefix=c===1?'blue':'orange',player=state.players?.[c],own=c===config.humanColor,present=!!player;
+    $('room-'+prefix+'-seat').classList.toggle('empty',!present);
+    const name=$('room-'+prefix+'-name');name.toggleAttribute('data-user-content',!!player?.displayName);
+    name.textContent=player?.displayName||(present?(AVATARS[player.avatar]||AVATARS[0]).name:'Open seat');
+    if(present)avatarPortrait($('room-'+prefix+'-avatar'),player.avatar);else $('room-'+prefix+'-avatar').removeAttribute('style');
+    $('room-'+prefix+'-role').textContent=!present?'Waiting for rival':own?'You · Connected':'Rival · Connected';
+  }
+  $('room-wait-title').textContent=roomError?'Reconnecting…':room.version<0?'Reconnecting to your room…':!room.ready?'Waiting for your rival…':state.winner?'Duel complete':'Duel in progress';
+  $('room-wait-description').textContent=roomError||(!room.ready?'The battle starts automatically when your rival joins.':state.winner?'The battle is over. Leave this room to host another duel.':'Both commanders are here. Return to the battlefield to continue.');
+  $('room-enter-battle').hidden=!room.ready;$('room-enter-battle').textContent=state.winner?'View finished battle →':'Return to battlefield →';
+  $('room-leave').textContent=pending?'Leaving room…':!room.ready?'Close room & leave':'Leave room';
+  $('room-leave').disabled=pending||room.version<0;
+  $('room-screen').classList.toggle('room-connected',room.ready);
+}
+function resetOnlineRoom(){stopRoom();stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;state=newGame();started=false;selected=null;snapshots=[];screen='lobby';render();}
+function requestLeaveRoom(onLeft=resetOnlineRoom){
+  if(!room||pending)return;
+  if(state.winner){resetOnlineRoom();if(onLeft!==resetOnlineRoom)onLeft();return;}
+  const live=room.ready,{code,token,version}=room;
+  modal(`<p class="eyebrow">${live?'LEAVE ONLINE DUEL':'CLOSE WAITING ROOM'}</p><h2>${live?'Resign and leave?':'Close this room?'}</h2><p>${live?'Leaving resigns this duel and awards your rival the win.':'Your invitation will stop working. No match or result will be recorded.'}</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-leave-room">Stay in room</button><button class="primary-btn" id="confirm-leave-room">${live?'Resign & leave':'Close room & leave'}</button></div>`);
+  $('cancel-leave-room').onclick=()=>$('modal').close();
+  $('confirm-leave-room').onclick=async()=>{
+    if(room?.code!==code||room.ready!==live||room.version!==version){$('modal').close();toast('The room changed. Check the lobby before leaving.');return;}
+    pending=true;$('confirm-leave-room').disabled=true;$('cancel-leave-room').disabled=true;render();
+    try{
+      const data=await api(`/api/rooms/${code}/leave`,{version},token);
+      if(room?.code!==code)return;
+      if(data.state.winner){const reward=awardMatch(profile,{state:data.state,mode:'online',humanColor:config.humanColor,botLevel:config.level});profile=reward.profile;saveProfile();syncProgress();}
+      $('modal').close();resetOnlineRoom();if(onLeft!==resetOnlineRoom)onLeft();
+      toast(data.state.roomClosed?'Room closed. Your invitation is no longer active.':'You left the room.');
+    }catch(e){pending=false;$('modal').close();await pollRoom();toast(e.message);}
+    finally{pending=false;render();}
+  };
+}
+function stopRoom(){roomError='';clearTimeout(roomTimer);roomTimer=null;room=null;try{localStorage.removeItem('little-kingdoms-room');sessionStorage.removeItem('little-kingdoms-room');}catch{}history.replaceState(null,'',location.pathname);}
 function connectRoom(data) {
   stopBot();resetEmotion();config={mode:'online',humanColor:data.color,level:data.level};
-  room={code:data.code,token:data.token,version:data.version,ready:data.ready};state=data.state;started=true;screen='battle';snapshots=[];selected=null;
-  history.replaceState(null,'',location.pathname+'?room='+room.code);storeRoom();render();playerCutin(config.humanColor,'start',true);clearTimeout(roomTimer);roomTimer=setTimeout(pollRoom,1400);
+  roomError='';room={code:data.code,token:data.token,version:data.version,ready:data.ready,hostColor:data.hostColor};state=data.state;started=data.ready;screen=data.ready?'battle':'room';snapshots=[];selected=null;
+  history.replaceState(null,'',location.pathname+'?room='+room.code);storeRoom();render();if(data.ready)playerCutin(config.humanColor,'start',true);clearTimeout(roomTimer);roomTimer=setTimeout(pollRoom,1400);
 }
 let polling=false;
 async function pollRoom(){
@@ -335,10 +380,12 @@ async function pollRoom(){
   try {
     const data=await api(`/api/rooms/${code}`,null,room.token);
     if(!room||room.code!==code)return;
-    const ended=!!state.winner;const changed=data.version!==room.version||data.ready!==room.ready;
-    if(changed&&!pending){const before=state;room.version=data.version;room.ready=data.ready;state=data.state;selected=null;storeRoom();render(true);reactPlayer(before,state);if(state.winner&&!ended)showResult();else tone();}
+    if(data.phase==='closed'||data.state.roomClosed){resetOnlineRoom();toast('This room was closed by its host. Create or join another room.');return;}
+    roomError='';const wasReady=room.ready;const ended=!!state.winner;const changed=data.version!==room.version||data.ready!==room.ready;
+    if(changed&&!pending){const before=state;room.version=data.version;room.ready=data.ready;room.hostColor=data.hostColor;state=data.state;started=data.ready;selected=null;if(!wasReady&&data.ready){screen='battle';playerCutin(config.humanColor,'start',true);}storeRoom();render(true);reactPlayer(before,state);if(state.winner&&!ended)showResult();else tone();}
     if($('room-status'))$('room-status').textContent=room.ready?`Connected. You command ${colorName(config.humanColor)}.`:'Waiting for your opponent…';
-  }catch(e){if(room?.code===code){$('room-status').textContent=e.message+' Reconnecting…';}}
+    renderRoomLobby();localize($('room-screen'));localize($('room-status'));
+  }catch(e){if(room?.code===code){if([401,403,404,410].includes(e.status)){resetOnlineRoom();toast(e.message);}else{roomError=e.message+' Reconnecting…';render();}}}
   finally{polling=false;if(room?.code===code&&!document.hidden)roomTimer=setTimeout(pollRoom,1700);}
 }
 
@@ -357,18 +404,23 @@ $('undo').onclick=()=>{
   selected=null;persist();render();queueBot();toast('A moment to rethink your strategy.');
 };
 $('resign').onclick=()=>{modal('<p class="eyebrow">LAY DOWN YOUR BANNER</p><h2>Retreat from this battle?</h2><p>Your opponent will win. Every strategist needs a fresh start sometimes.</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-resign">Keep playing</button><button class="primary-btn" id="confirm-resign">Resign ⚑</button></div>');$('cancel-resign').onclick=()=>$('modal').close();$('confirm-resign').onclick=()=>{$('modal').close();stopBot();act('resign');};};
+$('room-leave').onclick=()=>requestLeaveRoom();$('battle-leave').onclick=()=>requestLeaveRoom();$('room-enter-battle').onclick=()=>{if(room?.ready){screen='battle';render();}};
+for(const [id,c]of[['host-blue',1],['host-orange',2]])$(id).onclick=()=>{if(room||pending)return;config.humanColor=c;render();};
+$('room-copy-code').onclick=async()=>{if(!room)return;try{await navigator.clipboard.writeText(room.code);toast('Room code copied.');}catch{toast('Room code: '+room.code);}};
+$('room-share-link').onclick=()=> $('copy-invite').click();
 $('rules-nav').onclick=showRules;
-$('generals-nav').onclick=showGenerals;$('play-nav').onclick=()=>{screen=started?'battle':'lobby';render();};
+$('generals-nav').onclick=showGenerals;$('play-nav').onclick=()=>{screen=room?(room.ready?'battle':'room'):started?'battle':'lobby';render();};
 $('treasury-nav').onclick=showTreasury;$('rankings-nav').onclick=showRankings;
-for(const id of['home','battle-back'])$(id).onclick=()=>{screen='lobby';render();};
-for(const id of['resume','return-to-room'])$(id).onclick=()=>{screen='battle';render();};
+for(const id of['home','battle-back'])$(id).onclick=()=>{screen=room?'room':'lobby';render();};
+$('resume').onclick=()=>{screen='battle';render();};$('return-to-room').onclick=()=>{screen='room';render();};
 $('fullscreen').onclick=async()=>{try{if(window.kingdomsDesktop){await window.kingdomsDesktop.toggleFullscreen();return;}if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{toast('Fullscreen unavailable on this display.');}};
 function showSettings(){
-  modal(`<p class="eyebrow">YOUR COMMAND TENT</p><h2>${screen==='battle'?'Battle menu':'Settings'}</h2><div class="settings-language-slot"></div><div class="audio-settings"><label>Music volume <output id="music-value">${Math.round(audioSettings.music*100)}%</output><input id="music-volume" type="range" min="0" max="100" value="${audioSettings.music*100}"></label><label>Battle effects <output id="effects-value">${Math.round(audioSettings.effects*100)}%</output><input id="effects-volume" type="range" min="0" max="100" value="${audioSettings.effects*100}"></label><div class="music-library"><label for="music-track">Soundtrack</label><select id="music-track">${MUSIC_TRACKS.map(t=>'<option value="'+t.id+'"'+(t.id===audioSettings.track?' selected':'')+'>'+t.title+'</option>').join('')}</select><label for="music-mode">Playback</label><select id="music-mode"><option value="rotation"${audioSettings.musicMode==='rotation'?' selected':''}>Rotate all tracks</option><option value="shuffle"${audioSettings.musicMode==='shuffle'?' selected':''}>Shuffle all tracks</option><option value="repeat"${audioSettings.musicMode==='repeat'?' selected':''}>Repeat this track</option></select><div class="music-current"><span>Now playing</span><strong id="music-now-playing">${currentMusic().title}</strong><small><span>By</span> <span id="music-author" data-l10n-skip>${currentMusic().author}</span></small><button class="secondary-btn" id="music-next">Next track ⏭</button></div><p id="music-status" role="status" hidden>Music unavailable. Try another track.</p><p class="music-credit"><span>Music is bundled for offline play. Each track has its own license.</span> <a id="music-source" href="${currentMusic().source}" target="_blank" rel="noopener">Source</a> · <a id="music-license" href="${currentMusic().licenseUrl}" target="_blank" rel="noopener" data-l10n-skip>${currentMusic().license}</a> · <a href="/assets/music-credits.txt" target="_blank" rel="noopener">Music credits</a></p></div></div><div class="settings-list"><button class="secondary-btn" id="setting-sound">Master audio <span>${audioSettings.muted?'Muted':'On ♫'}</span></button><button class="secondary-btn" id="setting-cutins">Anime cut-ins <span>${audioSettings.cutins?'On':'Off'}</span></button><button class="secondary-btn" id="setting-voice">Character voice <span>${audioSettings.voice?'On':'Off'}</span></button><button class="secondary-btn" id="setting-fullscreen">Fullscreen <span>${window.kingdomsDesktop?'F11 / Alt+Enter':'⛶'}</span></button><button class="secondary-btn" id="setting-home">Battle lobby <span>→</span></button><button class="secondary-btn" id="setting-rules">How to play <span>→</span></button>${installPrompt?'<button class="primary-btn" id="install-game">Install game ↓</button>':''}</div><p class="settings-hint">Character voice uses your device’s available speech voice. Bots, music and pass & play work offline in the installed game. Online duels need internet. Levels and avatars save on this device.</p>`);
+  modal(`<p class="eyebrow">YOUR COMMAND TENT</p><h2>${screen==='battle'?'Battle menu':'Settings'}</h2><div class="settings-language-slot"></div><div class="audio-settings"><label>Music volume <output id="music-value">${Math.round(audioSettings.music*100)}%</output><input id="music-volume" type="range" min="0" max="100" value="${audioSettings.music*100}"></label><label>Battle effects <output id="effects-value">${Math.round(audioSettings.effects*100)}%</output><input id="effects-volume" type="range" min="0" max="100" value="${audioSettings.effects*100}"></label><div class="music-library"><label for="music-track">Soundtrack</label><select id="music-track">${MUSIC_TRACKS.map(t=>'<option value="'+t.id+'"'+(t.id===audioSettings.track?' selected':'')+'>'+t.title+'</option>').join('')}</select><label for="music-mode">Playback</label><select id="music-mode"><option value="rotation"${audioSettings.musicMode==='rotation'?' selected':''}>Rotate all tracks</option><option value="shuffle"${audioSettings.musicMode==='shuffle'?' selected':''}>Shuffle all tracks</option><option value="repeat"${audioSettings.musicMode==='repeat'?' selected':''}>Repeat this track</option></select><div class="music-current"><span>Now playing</span><strong id="music-now-playing">${currentMusic().title}</strong><small><span>By</span> <span id="music-author" data-l10n-skip>${currentMusic().author}</span></small><button class="secondary-btn" id="music-next">Next track ⏭</button></div><p id="music-status" role="status" hidden>Music unavailable. Try another track.</p><p class="music-credit"><span>Music is bundled for offline play. Each track has its own license.</span> <a id="music-source" href="${currentMusic().source}" target="_blank" rel="noopener">Source</a> · <a id="music-license" href="${currentMusic().licenseUrl}" target="_blank" rel="noopener" data-l10n-skip>${currentMusic().license}</a> · <a href="/assets/music-credits.txt" target="_blank" rel="noopener">Music credits</a></p></div></div><div class="settings-list"><button class="secondary-btn" id="setting-sound">Master audio <span>${audioSettings.muted?'Muted':'On ♫'}</span></button><button class="secondary-btn" id="setting-cutins">Anime cut-ins <span>${audioSettings.cutins?'On':'Off'}</span></button><button class="secondary-btn" id="setting-voice">Character voice <span>${audioSettings.voice?'On':'Off'}</span></button><button class="secondary-btn" id="setting-fullscreen">Fullscreen <span>${window.kingdomsDesktop?'F11 / Alt+Enter':'⛶'}</span></button><button class="secondary-btn" id="setting-home">${room?'Room lobby':'Battle lobby'} <span>→</span></button>${room?'<button class="secondary-btn" id="setting-room-leave">Leave room <span>↗</span></button>':''}${room?.ready&&!state.winner?'<button class="secondary-btn" id="setting-resign">Resign ⚑</button>':''}<button class="secondary-btn" id="setting-rules">How to play <span>→</span></button>${installPrompt?'<button class="primary-btn" id="install-game">Install game ↓</button>':''}</div><p class="settings-hint">Character voice uses your device’s available speech voice. Bots, music and pass & play work offline in the installed game. Online duels need internet. Levels and avatars save on this device.</p>`);
   $('music-track').onchange=e=>chooseMusic(e.target.value);$('music-mode').onchange=e=>setMusicMode(e.target.value);$('music-next').onclick=nextMusic;
   for(const key of ['music','effects'])$(key+'-volume').oninput=e=>{audioSettings[key]=Number(e.target.value)/100;audioSettings.muted=false;$(key+'-value').textContent=e.target.value+'%';saveAudio();renderSetup();};
   $('setting-sound').onclick=()=>{$('sound').click();showSettings();};$('setting-cutins').onclick=()=>{audioSettings.cutins=!audioSettings.cutins;if(!audioSettings.cutins)$('cutin').hidden=true;saveAudio();showSettings();};$('setting-voice').onclick=()=>{audioSettings.voice=!audioSettings.voice;saveAudio();if(audioSettings.voice)speak(avatarLine(profile.avatar,'start'));else if('speechSynthesis'in window)speechSynthesis.cancel();showSettings();};
-  $('setting-fullscreen').onclick=()=>$('fullscreen').click();$('setting-home').onclick=()=>{$('modal').close();screen='lobby';render();};$('setting-rules').onclick=showRules;
+  $('setting-fullscreen').onclick=()=>$('fullscreen').click();$('setting-home').onclick=()=>{$('modal').close();screen=room?'room':'lobby';render();};$('setting-rules').onclick=showRules;
+  if($('setting-room-leave'))$('setting-room-leave').onclick=()=>requestLeaveRoom();if($('setting-resign'))$('setting-resign').onclick=()=>{$('modal').close();$('resign').click();};
   if($('install-game'))$('install-game').onclick=async()=>{await installPrompt.prompt();installPrompt=null;$('modal').close();};
 }
 window.addEventListener('kingdoms-musicchange',event=>{
@@ -394,13 +446,13 @@ $('join-form').onsubmit=async e=>{
   try{await ensureCommander({api,getProfile:()=>profile});const commander=await syncCommander({api,getProfile:()=>profile});const data=await api(`/api/rooms/${code}/join`,{avatar:profile.avatar,castle:profile.cosmetics.castle,commanderToken:commander.token});connectRoom(data);toast('Your rival awaits. Let the battle begin.');}
   catch(err){toast(err.message);}finally{b.disabled=false;}
 };
-$('copy-invite').onclick=async()=>{const link=PUBLIC_ORIGIN+'/?room='+room.code;try{await navigator.clipboard.writeText(link);toast('Invite copied. Send it to your rival.');}catch{toast('Room code: '+room.code);}};
+$('copy-invite').onclick=async()=>{if(!room)return;const link=PUBLIC_ORIGIN+'/?room='+room.code;try{await navigator.clipboard.writeText(link);toast('Invite copied. Send it to your rival.');}catch{toast('Room code: '+room.code);}};
 document.addEventListener('visibilitychange',()=>{if(room){clearTimeout(roomTimer);if(!document.hidden)pollRoom();}});
 window.addEventListener('storage',e=>{if(e.key===PROFILE_KEY){try{profile=normalizeProfile(JSON.parse(e.newValue));renderProfile();}catch{}}});
 
 render();
 let restoredRoom=false;
-try{const saved=JSON.parse(sessionStorage.getItem('little-kingdoms-room')||(API_BASE?localStorage.getItem('little-kingdoms-room'):null)||'null');if(saved?.code&&saved?.token){room={...saved,version:-1,ready:false};config=saved.config;state=newGame('literal');snapshots=[];selected=null;started=true;screen='battle';restoredRoom=true;render();pollRoom();}}catch{}
+try{const saved=JSON.parse(sessionStorage.getItem('little-kingdoms-room')||(API_BASE?localStorage.getItem('little-kingdoms-room'):null)||'null');if(saved?.code&&saved?.token){room={...saved,version:-1,ready:false};config=saved.config;state=newGame('literal');snapshots=[];selected=null;started=false;screen='room';restoredRoom=true;render();pollRoom();}}catch{}
 if(!restoredRoom){
   const invite=new URLSearchParams(location.search).get('room');
   if(invite&&/^[A-Z0-9]{6}$/i.test(invite)){stopBot();config.mode='online';started=false;screen='lobby';render();$('room-code').value=invite.toUpperCase();toast('Your invitation is ready. Press Join to take your seat.');}
