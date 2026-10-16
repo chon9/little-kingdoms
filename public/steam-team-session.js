@@ -3,7 +3,7 @@ import {newTeamGame,playTeam,teamColor,rematchTeam} from './teams.js';
 const steamTeamID=value=>typeof value==='string'&&/^\d{17,20}$/.test(value);
 const steamTeamToken=value=>typeof value==='string'&&/^[a-zA-Z0-9-]{8,80}$/.test(value);
 const steamTeamClone=value=>JSON.parse(JSON.stringify(value));
-function steamTeamAppearance(value={}){if(!value||typeof value!=='object')value={};return{avatar:Number.isInteger(value.avatar)&&value.avatar>=0&&value.avatar<60?value.avatar:0,castle:/^(classic|c(?:0[1-9]|[1-4]\d|50))$/.test(value.castle)?value.castle:'classic'};}
+function steamTeamAppearance(value={}){if(!value||typeof value!=='object')value={};return{...(typeof value.skillRating==='number'&&Number.isFinite(value.skillRating)&&value.skillRating>=0&&value.skillRating<=5000&&Number.isSafeInteger(value.skillGames)&&value.skillGames>=0&&value.skillGames<=1000000?{skillRating:value.skillRating,skillGames:value.skillGames}:{}),avatar:Number.isInteger(value.avatar)&&value.avatar>=0&&value.avatar<60?value.avatar:0,castle:/^(classic|c(?:0[1-9]|[1-4]\d|50))$/.test(value.castle)?value.castle:'classic'};}
 export class SteamTeamSession{
   constructor({bridge,identity,profile,onUpdate=()=>{},onError=()=>{},now=()=>Date.now(),uuid=()=>crypto.randomUUID(),autoTick=true}){
     Object.assign(this,{bridge,identity,onUpdate,onError,now,uuid});this.profile=steamTeamAppearance(profile);this.members=[];this.ids=[];this.profiles=new Map([[identity.id,this.profile]]);this.seen=new Map();this.commands=new Map();this.consents=new Set();this.receipts=[];this.seq=0;this.team1Color=1;this.ready=false;this.hostConnected=false;this.closed=false;this.error='';this.unsubscribe=bridge.on(e=>this.event(e));if(autoTick)this.timer=setInterval(()=>this.tick(),1500);
@@ -84,15 +84,16 @@ export class SteamTeamSession{
   }
   applyRematch(command,seat){
     if(!this.state.winner||this.state.roomDeparted?.length)throw new Error('Finish this duel before requesting a rematch.');const offer=this.state.rematch;
+    if(command.profile&&['request','accept'].includes(command.action))this.nextProfiles={...this.nextProfiles,[seat]:steamTeamAppearance(command.profile)};
     if(command.action==='request'){if(offer?.status==='pending'||!steamTeamToken(command.offerId))throw new Error('A rematch request is already open.');this.state={...this.state,rematch:{id:command.offerId,status:'pending',accepted:[seat]}};}
     else{if(offer?.status!=='pending'||offer.id!==command.offerId)throw new Error('This rematch request has changed.');
-      if(command.action==='accept'){const accepted=[...new Set([...offer.accepted,seat])].sort();if(accepted.length===4){this.proof={matchId:this.state.matchId,offerId:offer.id,accepted};this.state={...rematchTeam(this.state),matchId:this.uuid(),launched:true};this.team1Color=this.state.team1Color;this.receipts=[];}else this.state={...this.state,rematch:{...offer,accepted}};}
+      if(command.action==='accept'){const accepted=[...new Set([...offer.accepted,seat])].sort();if(accepted.length===4){this.proof={matchId:this.state.matchId,offerId:offer.id,accepted};this.state={...rematchTeam({...this.state,teamPlayers:Object.fromEntries([1,2,3,4].map(s=>[s,{...this.state.teamPlayers[s],...this.nextProfiles?.[s]}]))}),matchId:this.uuid(),launched:true};this.team1Color=this.state.team1Color;this.receipts=[];this.nextProfiles={};}else this.state={...this.state,rematch:{...offer,accepted}};}
       else if(command.action==='cancel'&&offer.accepted.includes(seat)||command.action==='decline'&&!offer.accepted.includes(seat))this.state={...this.state,rematch:{...offer,status:command.action==='cancel'?'cancelled':'declined',accepted:[],by:seat}};else throw new Error('Choose a valid rematch action.');
     }
   }
   async command(data){if(!this.connected||this.closed||this.state?.roomDeparted?.length)throw new Error('Wait for all four Steam commanders to connect.');if(this.commands.size)throw new Error('Wait for Steam to confirm your previous action.');const command={...data,id:this.uuid(),matchId:this.state.matchId,ply:this.state.ply};if(this.isHost){this.handleCommand(command,1);return;}return new Promise((resolve,reject)=>{this.commands.set(command.id,{command,resolve,reject,at:this.now(),sent:this.now()});this.transmit(this.host,'command',{command});});}
   act(action){return this.command({kind:'move',action});}
-  rematch(action){const offerId=action==='request'?this.uuid():this.state?.rematch?.id;if(action==='request'||action==='accept')this.consents.add(offerId);return this.command({kind:'rematch',action,offerId});}
+  rematch(action){const offerId=action==='request'?this.uuid():this.state?.rematch?.id;if(action==='request'||action==='accept')this.consents.add(offerId);return this.command({kind:'rematch',action,offerId,profile:this.profile});}
   tick(){
     if(this.closed||!this.lobby||this.state?.roomDeparted?.length)return;
     if(!this.ready){if(!this.isHost)this.transmit(this.host,'hello',{profile:this.profile});return;}

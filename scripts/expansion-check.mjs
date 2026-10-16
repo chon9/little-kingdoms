@@ -1,9 +1,10 @@
 import { spawn } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const wait = ms => new Promise(resolve => setTimeout(resolve,ms));
+const releaseVersion=JSON.parse(await readFile('package.json','utf8')).version;
 const artifactDir = path.resolve('artifacts');await mkdir(artifactDir,{recursive:true});
 const edge = spawn('C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',[
   '--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--disable-extensions',
@@ -43,10 +44,10 @@ try{
   await p.click('[data-index="30"]');await p.click('#deploy');assert.match(await p.evaluate('document.querySelector("[data-index=\\"30\\"] img").src'),/c50.webp/);assert.match(await p.evaluate('document.querySelector(".board-space").style.getPropertyValue("--board-art")'),/b40.webp/);await wait(2500);await p.screenshot('new-avatar-castle-board-phone-v300');
   const paths=await p.evaluate(`Promise.all([import('/progression.js'),import('/cosmetics.js')]).then(([a,c])=>[...a.AVATARS.slice(40).map(x=>x.image),...c.COSMETICS.filter(x=>x.id[0]==='c'?Number(x.id.slice(1))>30:Number(x.id.slice(1))>20).map(x=>x.image)])`);assert.equal(paths.length,60);
   assert.equal(await p.evaluate(`Promise.all(${JSON.stringify(paths)}.map(src=>new Promise(resolve=>{const i=new Image();i.onload=()=>resolve(i.naturalWidth>=256);i.onerror=()=>resolve(false);i.src=src;}))).then(x=>x.every(Boolean))`),true);
-  await p.until(`(async()=>{await navigator.serviceWorker.ready;const c=await caches.open('little-kingdoms-v3.0.0');return (await Promise.all(${JSON.stringify(paths)}.map(x=>c.match(x)))).every(Boolean);})()`,20000);
+  await p.until(`(async()=>{await navigator.serviceWorker.ready;const c=await caches.open('little-kingdoms-v3.1.0');return (await Promise.all(${JSON.stringify(paths)}.map(x=>c.match(x)))).every(Boolean);})()`,20000);
   await p.send('Network.enable');await p.send('Network.clearBrowserCache');await p.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});await p.navigate();assert.match(await p.evaluate('document.querySelector("#profile-avatar").style.backgroundImage'),/a59.webp/);assert.equal(await p.evaluate(`Promise.all(${JSON.stringify(paths)}.map(src=>fetch(src).then(r=>r.ok))).then(x=>x.every(Boolean))`),true);
   await p.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
-  await p.send('Page.navigate',{url:'http://127.0.0.1:4317/download.html'});await p.until('!!document.querySelector("#download-windows")');assert.equal(await p.evaluate('document.querySelector("#download-windows").href'),'https://github.com/chon9/little-kingdoms/releases/download/v3.0.0/LittleKingdoms-3.0.0-Windows.zip');
+  await p.send('Page.navigate',{url:'http://127.0.0.1:4317/download.html'});await p.until('!!document.querySelector("#download-windows")');assert.equal(await p.evaluate('document.querySelector("#download-windows").href'),`https://github.com/chon9/little-kingdoms/releases/download/v${releaseVersion}/LittleKingdoms-${releaseVersion}-Windows.zip`);
   await p.evaluate('window.__downloadClicks=0;document.querySelector("#download-windows").onclick=e=>{e.preventDefault();window.__downloadClicks++}');
   for(const [w,h]of[[320,568],[390,844],[844,390],[1440,900]]){await p.send('Emulation.setDeviceMetricsOverride',{width:w,height:h,deviceScaleFactor:1,mobile:w<720});await p.click('#download-windows');assert.equal(await p.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);}
   assert.equal(await p.evaluate('window.__downloadClicks'),4);await p.evaluate("import('/i18n.js').then(m=>m.setLanguage('zh-Hans'))");await p.until('document.querySelector("h1").textContent.includes("战场")');await p.screenshot('windows-download-zh-v300');assert.deepEqual(p.errors,[]);

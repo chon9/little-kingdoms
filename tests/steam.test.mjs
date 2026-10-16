@@ -72,3 +72,8 @@ test('an unready Quick Match guest requeues after the original owner disappears'
   const p=pair();await p.guest.quick();p.events.get(GUEST)({type:'lobby',lobby:LOBBY,host:HOST,hostPresent:false,quick:true,members:[{id:GUEST}]});
   await Promise.resolve();await Promise.resolve();assert.deepEqual(p.quickCalls,[GUEST,GUEST]);assert.equal(p.guest.lobby,null);assert.equal(p.guest.expectLobby,true);
 });
+test('Steam rematches refresh both rating estimates without rewriting the finished match',async()=>{
+ const p=pair();await p.start();await finish(p);Object.assign(p.host.profile,{skillRating:1800,skillGames:50});Object.assign(p.guest.profile,{skillRating:1400,skillGames:40});
+ let r=p.host.rematch('request');p.drain();await r;assert.equal(p.host.state.players[1].skillRating,undefined);
+ r=p.guest.rematch('accept');p.drain();await r;assert.equal(p.host.state.players[2].skillRating,1800);assert.equal(p.host.state.players[1].skillRating,1400);assert.deepEqual(p.host.state,p.guest.state);
+});

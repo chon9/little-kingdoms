@@ -1,0 +1,2 @@
+// Public device estimates only: never use these fields as verified leaderboard data.
+export function seatSkill(body){return typeof body.skillRating==='number'&&Number.isFinite(body.skillRating)&&body.skillRating>=0&&body.skillRating<=5000&&Number.isSafeInteger(body.skillGames)&&body.skillGames>=0&&body.skillGames<=1000000?{skillRating:Math.round(body.skillRating*10)/10,skillGames:body.skillGames}:{};}

@@ -83,7 +83,7 @@ try{
   }
   await select('music-track','pb-545843');
   assert.equal(await p.evaluate('localStorage.getItem("little-kingdoms-save")'),match,'music preferences preserve the saved match');
-  await p.until(`(async()=>{await navigator.serviceWorker.ready;const cache=await caches.open('little-kingdoms-v3.0.0');return (await Promise.all(${JSON.stringify(tracks.map(t=>t.file))}.map(f=>cache.match(f)))).every(Boolean);})()`,20000);
+  await p.until(`(async()=>{await navigator.serviceWorker.ready;const cache=await caches.open('little-kingdoms-v3.1.0');return (await Promise.all(${JSON.stringify(tracks.map(t=>t.file))}.map(f=>cache.match(f)))).every(Boolean);})()`,20000);
   await p.send('Network.enable');await p.send('Network.clearBrowserCache');await p.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await p.navigate();await p.click('#settings-nav');
   assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'pb-545843');

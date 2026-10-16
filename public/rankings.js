@@ -31,13 +31,14 @@ export async function syncCommander({api,getProfile}){
     return update(replacement); // One retry only; another 401 is surfaced.
   }
 }
-export function openRankings({modal,api,getProfile,toast}){
+export function openRankings({modal,api,getProfile,toast,onSkill}){
   let tab='level',generation=0;
   const root=document.getElementById('modal-content');
   const isCurrent=n=>n===generation&&root.querySelector('.rankings');
   async function load(){
     const current=++generation,p=getProfile();
-    modal(`<section class="rankings"><header class="rankings-heading"><p class="eyebrow">THE RIVERLANDS REMEMBER</p><h2>Hall of legends</h2></header><div class="rankings-scroll"><div id="commander-card" class="commander-card"><p>Connecting your commander…</p></div><div class="rankings-tabs" role="group" aria-label="Leaderboard"><button id="rank-level" class="${tab==='level'?'selected':''}">Commander levels</button><button id="rank-wins" class="${tab==='wins'?'selected':''}">Online wins</button></div><p class="rankings-note" id="rank-source">${tab==='level'?'Device progress · unranked. Includes AI and local battles.':'Server-recorded online results. Both players must deploy at least two castles.'}</p><div id="rank-list" aria-live="polite"><p>Gathering the banners…</p></div></div><footer class="rankings-footer"><button id="rank-refresh" class="secondary-btn">Refresh ↻</button><button id="rank-close" class="primary-btn">Back to game →</button></footer></section>`);
+    modal(`<section class="rankings"><header class="rankings-heading"><p class="eyebrow">THE RIVERLANDS REMEMBER</p><h2>Hall of legends</h2></header><div class="rankings-scroll"><div id="commander-card" class="commander-card"><p>Connecting your commander…</p></div><button class="secondary-btn" id="rank-skill">My skill rank →</button><div class="rankings-tabs" role="group" aria-label="Leaderboard"><button id="rank-level" class="${tab==='level'?'selected':''}">Commander levels</button><button id="rank-wins" class="${tab==='wins'?'selected':''}">Online wins</button></div><p class="rankings-note" id="rank-source">${tab==='level'?'Device progress · unranked. Includes AI and local battles.':'Server-recorded online results. Both players must deploy at least two castles.'}</p><div id="rank-list" aria-live="polite"><p>Gathering the banners…</p></div></div><footer class="rankings-footer"><button id="rank-refresh" class="secondary-btn">Refresh ↻</button><button id="rank-close" class="primary-btn">Back to game →</button></footer></section>`);
+    root.querySelector('#rank-skill').onclick=onSkill;
     root.querySelector('#rank-level').onclick=()=>{tab='level';load();};root.querySelector('#rank-wins').onclick=()=>{tab='wins';load();};root.querySelector('#rank-refresh').onclick=load;root.querySelector('#rank-close').onclick=()=>document.getElementById('modal').close();
     try{
       await ensureCommander({api,getProfile});await syncCommander({api,getProfile});

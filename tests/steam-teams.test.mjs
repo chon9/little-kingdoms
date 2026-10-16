@@ -14,3 +14,12 @@ test('four Steam identities receive one host-authored seat roster and legal alte
 test('all four Steam players must consent; rematch swaps colors and keeps roster/lobby',async()=>{const p=four();await p.start();for(const seat of[1,3,2,4])await p.action(seat,'pass');const old=p.sessions[0].state.matchId;let pending=p.sessions[0].rematch('request');p.drain();await pending;for(const i of[1,2,3]){pending=p.sessions[i].rematch('accept');p.drain();await pending;if(i<3)assert.equal(p.sessions[i].state.matchId,old);}for(const s of p.sessions){assert.notEqual(s.state.matchId,old);assert.equal(s.state.team1Color,2);assert.equal(s.state.turnSeat,3);assert.deepEqual(s.state,p.sessions[0].state);}assert.deepEqual(p.errors,[]);});
 test('a teammate cannot act early and a disconnect pauses the full Steam team game',async()=>{const p=four();await p.start();const bad=p.sessions[1].act(30);p.drain();await assert.rejects(bad,/teammate/);p.advance(16000);assert.equal(p.sessions[0].connected,false);await assert.rejects(p.sessions[0].act(30),/all four/);for(const s of p.sessions)s.tick();p.drain();assert.ok(p.sessions.every(s=>s.connected));await p.action(1,30);});
 test('Steam team departure identifies the actual missing seat and blocks rematch',async()=>{const p=four(2);await p.start();const remaining=p.ids.map((id,i)=>({id,name:'P'+(i+1)})).filter((_,i)=>i!==2);for(const i of[0,1,3])p.event(i,remaining);for(const i of[0,1,3]){assert.equal(p.sessions[i].state.resignedSeat,3);assert.equal(p.sessions[i].state.winner,2);assert.equal(p.sessions[i].state.steamAborted,true);await assert.rejects(p.sessions[i].rematch('request'),/connect/);}});
+
+test('four Steam seats refresh their individual ratings only on an agreed rematch',async()=>{
+ const p=four();await p.start();for(const seat of[1,3,2,4])await p.action(seat,'pass');
+ for(let i=0;i<4;i++)Object.assign(p.sessions[i].profile,{skillRating:1200+i*200,skillGames:30+i});
+ let r=p.sessions[0].rematch('request');p.drain();await r;assert.equal(p.sessions[0].state.teamPlayers[1].skillRating,undefined);
+ for(const i of[1,2,3]){r=p.sessions[i].rematch('accept');p.drain();await r;}
+ for(const session of p.sessions)for(const seat of[1,2,3,4])assert.equal(session.state.teamPlayers[seat].skillRating,1200+(seat-1)*200);
+ assert.deepEqual(p.errors,[]);
+});

@@ -56,7 +56,7 @@ try{
       console.log('Native Steam bridge checked: '+(steam.ok?'official runtime initialized as AppID 480, created real 2/4-seat private lobbies and a public Quick Match queue, delivered callbacks, and left cleanly':'Steam unavailable; graceful connection error and crossplay fallback')+'. Multi-account Steam networking and matchmaking convergence remain unverified here.');
     }
   }
-  await evaluate('localStorage.clear();sessionStorage.clear()');
+  await evaluate("localStorage.clear();sessionStorage.clear();localStorage.setItem('little-kingdoms-ranked-ai','off')");
   await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await send('Page.reload',{ignoreCache:true});await wait(300);await until('document.querySelectorAll(".cell").length===81');
   await click('#begin');await click('[data-index="30"]');await click('#deploy');
@@ -75,7 +75,7 @@ try{
     const decoded=await evaluate(`(async()=>{const{COSMETICS}=await import('/cosmetics.js');return Promise.all(COSMETICS.map(async item=>{const image=new Image();image.src=item.image;await image.decode();return image.naturalWidth>0;}));})()`);assert.equal(decoded.filter(Boolean).length,90,'all collectible artwork is bundled in the native client');
     await click('#treasury-nav');await click('#treasury-draw');assert.equal(await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-profile-v1")).cosmetics.owned.length'),1,'native offline pull saves before the reveal');
     await click('#treasury-equip');await click('#modal-close');await click('#treasury-nav');assert.equal(await evaluate('document.querySelector("#treasury-draw").disabled'),true,'native reload/reopen cannot spend the welcome pull twice');await click('#modal-close');
-    await click('#profile-button');assert.equal(await evaluate('document.querySelectorAll(".avatar-card").length'),60);await click('#modal-close');
+    await click('#profile-button');assert.equal(await evaluate('document.querySelectorAll(".avatar-card").length'),60);await click('#skill-details');assert.equal(await evaluate('document.querySelectorAll(".skill-rung").length'),29);await click('#skill-back');await click('#modal-close');
     await click('#rules-nav');assert.equal(await evaluate('document.querySelector(".comic-book").dataset.comicPage'),'0');
     await click('[data-comic-jump]');assert.equal(await evaluate('document.querySelector(".comic-book").dataset.comicPage'),'5');
     await click('[data-rule-try="eye"]');assert.equal(await evaluate('document.querySelector("#rule-feedback-eye").textContent.includes("BLOCKED")'),true,'offline comic uses the real engine');

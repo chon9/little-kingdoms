@@ -7,7 +7,7 @@ export const STEAM_PROTOCOL=2;
 const validID=value=>typeof value==='string'&&/^\d{17,20}$/.test(value);
 const token=value=>typeof value==='string'&&/^[a-zA-Z0-9-]{8,80}$/.test(value);
 const clone=value=>JSON.parse(JSON.stringify(value));
-function appearance(value={}){if(!value||typeof value!=='object')value={};return{avatar:Number.isInteger(value.avatar)&&value.avatar>=0&&value.avatar<60?value.avatar:0,castle:/^(classic|c(?:0[1-9]|[1-4]\d|50))$/.test(value.castle)?value.castle:'classic'};}
+function appearance(value={}){if(!value||typeof value!=='object')value={};return{...(typeof value.skillRating==='number'&&Number.isFinite(value.skillRating)&&value.skillRating>=0&&value.skillRating<=5000&&Number.isSafeInteger(value.skillGames)&&value.skillGames>=0&&value.skillGames<=1000000?{skillRating:value.skillRating,skillGames:value.skillGames}:{}),avatar:Number.isInteger(value.avatar)&&value.avatar>=0&&value.avatar<60?value.avatar:0,castle:/^(classic|c(?:0[1-9]|[1-4]\d|50))$/.test(value.castle)?value.castle:'classic'};}
 function advance(state,action,color){
   if(![1,2].includes(color)||action!=='resign'&&state.turn!==color)throw new Error('Wait for your turn.');
   if(action!=='pass'&&action!=='resign'&&(!Number.isInteger(action)||action<0||action>80))throw new Error('Choose a square on the board.');
@@ -68,9 +68,9 @@ export class SteamSession {
   }
   hello(){this.lastHello=this.now();this.transmit('hello',{profile:this.profile});}
   freshMatch(proof=null){
-    const guest=this.state?.players?.[3-this.hostColor];if(proof)this.hostColor=3-this.hostColor;
-    this.state={...newGame('literal'),matchId:this.uuid(),players:{[this.hostColor]:{...this.profile,displayName:this.identity.name||'Steam commander'},...(guest?{[3-this.hostColor]:guest}:{})}};
-    this.startProof=proof;this.receipts=[];
+    const guest=this.state?.players?.[3-this.hostColor],nextGuest={...guest,...this.nextProfiles?.[3-this.hostColor]};if(proof)this.hostColor=3-this.hostColor;
+    this.state={...newGame('literal'),matchId:this.uuid(),players:{[this.hostColor]:{...this.profile,displayName:this.identity.name||'Steam commander'},...(guest?{[3-this.hostColor]:nextGuest}:{})}};
+    this.startProof=proof;this.receipts=[];this.nextProfiles={};
   }
   snapshot(){if(this.ready)this.transmit('snapshot',{seq:this.seq,matchId:this.state.matchId,hostColor:this.hostColor,players:this.state.players,actions:this.state.history,rematch:this.state.rematch||null,acks:this.receipts.map(r=>r.id),startProof:this.startProof});}
   acceptSnapshot(message){
@@ -101,6 +101,7 @@ export class SteamSession {
   }
   applyRematch(command,color){
     if(!this.state.winner||this.state.roomDeparted?.length)throw new Error('Finish this duel before requesting a rematch.');
+    if(command.profile&&['request','accept'].includes(command.action)){this.nextProfiles={...this.nextProfiles,[color]:appearance(command.profile)};}
     const current=this.state.rematch;
     if(command.action==='request'){
       if(current?.status==='pending')throw new Error('A rematch request is already open.');
@@ -126,7 +127,7 @@ export class SteamSession {
   rematch(action){
     const offerId=action==='request'?this.uuid():this.state?.rematch?.id;
     if(action==='request'||action==='accept')this.consents.add(offerId);
-    return this.command({kind:'rematch',action,offerId});
+    return this.command({kind:'rematch',action,offerId,profile:this.profile});
   }
   tick(){
     if(this.closed||!this.peer||this.state?.roomDeparted?.length)return;

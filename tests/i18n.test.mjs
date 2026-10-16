@@ -20,6 +20,9 @@ test('new general speech, team turns, rematch consent and download actions are l
   for(const s of['P3 is planning','P3 · Shu moves','Blue A → Orange A → Blue B → Orange B','3 / 4 consecutive passes. Blue A → Orange A → Blue B → Orange B','2 / 4 commanders accepted. Colors swap when all four are ready.','All four commanders must accept. Teams swap Blue and Orange for the next battle.'])assert.doesNotMatch(tr(s),/[A-Za-z]{2,}/,s);
   assert.match(tr('Download Windows ↓'),/下载/);assert.match(tr('Your avatars · 60'),/头像/);setLanguage('en');
 });
+test('kyu/dan ranks, rating changes, next-rank targets and practice settings translate completely',()=>{
+ setLanguage('zh-Hans');for(const s of['20 Kyu','1 Kyu','1 Dan','9 Dan','LV. 6 · 19K','LV. 30 · 4D','1070.8 rating · 21 ranked games','Next: 18 Kyu · 29.2 rating to gain · 0 games to play','Next: 1 Dan · Win to confirm promotion','Ranked AI battles','My skill rank →','Ranked defeats','RANK PROMOTION','RANK DEMOTION','This rival is too far below your rating. Try a stronger opponent.'])assert.doesNotMatch(tr(s),/[A-Za-z]{2,}/,s);setLanguage('en');
+});
 test('specific tutorial, reward and accessible-name patterns take priority over punctuation fallbacks',()=>{
   setLanguage('zh-Hans');
   for(const text of ['STEP 2 / 3 · SHU · BLUE','For this step, deploy at A9. Your practice board has not changed.','Owned 2/50 · Cosmetic rewards only','Shu group: 1 liberty','Shu group: 2 liberties'])assert.doesNotMatch(tr(text),/[A-Za-z]{2,}/,text);

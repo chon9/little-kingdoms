@@ -10,6 +10,8 @@ No Cloudflare account is needed to play. Online play requires internet access an
 
 Version 3.0 includes 60 avatars, seven supplied Pixabay tracks, 2v2 alliances, Steam Quick Match for 1v1, and alternating team colors on rematch. Website visitors can use `/download.html` to get the pinned Windows ZIP and checksums from GitHub Releases.
 
+Version 3.1 adds the same offline-capable kyu/dan estimate as the website. Ranked AI disables undo; Settings can switch the next AI match to practice. Wins, losses and explicit forfeits change rating separately from permanent XP. The estimate stays on this device and is not a server-verified ladder.
+
 ## Shared client build
 
 From the repository root:

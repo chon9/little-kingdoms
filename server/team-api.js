@@ -1,3 +1,4 @@
+import {seatSkill} from './seat-skill.js';
 import {newTeamGame,playTeam,teamColor,TEAM_SEATS,teamRepresentatives,rematchTeam} from '../shared/teams.js';
 
 const TEAM_TTL=12*60*60*1000;
@@ -9,7 +10,7 @@ function teamAppearance(body){
   const avatar=body.avatar===undefined?0:body.avatar,castle=body.castle===undefined?'classic':body.castle;
   if(!Number.isInteger(avatar)||avatar<0||avatar>=60||typeof castle!=='string'||! /^(classic|c(?:0[1-9]|[1-4]\d|50))$/.test(castle))throw new Error('Choose a valid general avatar and castle.');
   const name=typeof body.displayName==='string'?body.displayName.normalize('NFKC').replace(/[^\p{L}\p{N} ._'\-]/gu,'').trim().slice(0,20):'Commander';
-  return{avatar,castle,displayName:name||'Commander'};
+  return{avatar,castle,displayName:name||'Commander',...seatSkill(body)};
 }
 function exposeTeam(room,seat,token){
   const state=JSON.parse(room.state);for(const key of Object.keys(state))if(key.startsWith('_'))delete state[key];
@@ -62,13 +63,14 @@ export async function handleTeamRoom(request,url,body,store){
     const offer=state.rematch;if(!state.launched||!state.winner)return teamJSON({error:'Finish the current duel before requesting a rematch.'},409);
     if(state.roomDeparted?.length||state.roomClosed)return teamJSON({error:'A commander left this room. Create a new room to play again.'},409);
     if(body.matchId!==state.matchId)return teamJSON({error:'This rematch belongs to an older duel. Refresh the room.'},409);
+    if(['request','accept'].includes(body.action)){state._nextSkills={...state._nextSkills,[seat]:seatSkill(body)};}
     if(body.action==='request'){
       if(offer?.status==='pending')return teamJSON({error:'A rematch request is already open.'},409);
       next={...state,rematch:{id:crypto.randomUUID(),status:'pending',accepted:[seat]}};
     }else{
       if(offer?.status!=='pending'||offer.id!==body.offerId)return teamJSON({error:'This rematch request has changed.'},409);
       if(body.action==='accept'){
-        const accepted=[...new Set([...offer.accepted,seat])];next=accepted.length===4?{...rematchTeam(state),matchId:crypto.randomUUID(),launched:true,_seatHashes:state._seatHashes}:{...state,rematch:{...offer,accepted}};
+        const accepted=[...new Set([...offer.accepted,seat])];next=accepted.length===4?{...rematchTeam({...state,teamPlayers:Object.fromEntries(TEAM_SEATS.map(s=>[s,{...state.teamPlayers[s],...state._nextSkills?.[s]}]))}),matchId:crypto.randomUUID(),launched:true,_seatHashes:state._seatHashes}:{...state,rematch:{...offer,accepted}};
       }else if(body.action==='cancel'&&offer.accepted.includes(seat)||body.action==='decline'&&!offer.accepted.includes(seat))next={...state,rematch:{...offer,status:body.action==='cancel'?'cancelled':'declined',accepted:[],by:seat}};
       else return teamJSON({error:'Choose a valid rematch action.'},400);
     }

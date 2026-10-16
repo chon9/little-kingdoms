@@ -6,9 +6,10 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 async function digest(token) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))), n => n.toString(16).padStart(2, '0')).join(''); }
 function randomToken() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2, '0')).join(''); }
 function randomCode() { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from(crypto.getRandomValues(new Uint8Array(6)), n => chars[n % 32]).join(''); }
-function exposed(room, color, token) { const state=JSON.parse(room.state);delete state._resultSaved;delete state._moveReceipts;return { code: room.code, state, version: room.version, ready: !!room.guestHash&&!state.roomClosed, phase:state.roomClosed?'closed':state.winner?'finished':room.guestHash?'playing':'waiting', hostColor:state.hostColor??room.hostColor, color, level: room.level, ...(token ? { token } : {}) }; }
+function exposed(room, color, token) { const state=JSON.parse(room.state);delete state._resultSaved;delete state._moveReceipts;delete state._nextSkills;return { code: room.code, state, version: room.version, ready: !!room.guestHash&&!state.roomClosed, phase:state.roomClosed?'closed':state.winner?'finished':room.guestHash?'playing':'waiting', hostColor:state.hostColor??room.hostColor, color, level: room.level, ...(token ? { token } : {}) }; }
 function commanderLevel(xp) { let level=1;while(level<90&&xp>=80*level+20*level**2)level++;return level; }
 function publicCommander(row) { return {id:row.id,displayName:row.displayName,avatar:row.avatar,xp:row.xp,level:commanderLevel(row.xp),matches:row.matches,wins:row.wins,localWins:row.wins,localLosses:row.matches-row.wins,onlineWins:Number(row.onlineWins||0),onlineLosses:Number(row.onlineLosses||0)}; }
+import {seatSkill} from './seat-skill.js';
 const validAvatar=value=>Number.isInteger(value)&&value>=0&&value<60;
 const validCastle=value=>value===undefined||value==='classic'||typeof value==='string'&&/^c(?:0[1-9]|[1-4][0-9]|50)$/.test(value);
 function cleanName(value) { if(typeof value!=='string')return null;const name=value.normalize('NFKC').replace(/[^\p{L}\p{N} ._'\-]/gu,'').replace(/\s+/g,' ').trim();return Array.from(name).length>=2&&Array.from(name).length<=20?name:null; }
@@ -119,7 +120,7 @@ async function processAPI(request, store) {
       if(body.commanderToken!==undefined&&!commander)return json({error:'Your commander identity could not be verified.'},401);
       const token = randomToken(), hostHash = await digest(token);
       for (let i = 0; i < 4; i++) {
-        const state={...newGame('literal'),matchId:crypto.randomUUID(),players:{[body.hostColor]:{avatar:body.avatar??commander?.avatar??(body.hostColor===1?0:10),castle:body.castle??'classic',...(commander?{commanderId:commander.id,displayName:commander.displayName}:{})}}};
+        const state={...newGame('literal'),matchId:crypto.randomUUID(),players:{[body.hostColor]:{avatar:body.avatar??commander?.avatar??(body.hostColor===1?0:10),castle:body.castle??'classic',...seatSkill(body),...(commander?{commanderId:commander.id,displayName:commander.displayName}:{})}}};
         const room = { code: randomCode(), hostHash, guestHash: null, hostColor: body.hostColor, level: body.level, state: JSON.stringify(state), version: 0, expires: Date.now() + ROOM_TTL };
         if (await store.insert(room)) return json(exposed(room, room.hostColor, token), 201);
       }
@@ -137,7 +138,7 @@ async function processAPI(request, store) {
       const commander=body.commanderToken===undefined?null:await commanderForToken(store,body.commanderToken);
       if(body.commanderToken!==undefined&&!commander)return json({error:'Your commander identity could not be verified.'},401);
       const token = randomToken(), hash = await digest(token);
-      const state=JSON.parse(room.state),color=3-room.hostColor;state.players={...state.players,[color]:{avatar:body.avatar??commander?.avatar??(color===1?0:10),castle:body.castle??'classic',...(commander?{commanderId:commander.id,displayName:commander.displayName}:{})}};const serialized=JSON.stringify(state);
+      const state=JSON.parse(room.state),color=3-room.hostColor;state.players={...state.players,[color]:{avatar:body.avatar??commander?.avatar??(color===1?0:10),castle:body.castle??'classic',...seatSkill(body),...(commander?{commanderId:commander.id,displayName:commander.displayName}:{})}};const serialized=JSON.stringify(state);
       if (!await store.join(code, room.version, hash, serialized)) return json({ error: 'Another commander just took that seat. Create a fresh room.' }, 409);
       return json(exposed({ ...room, state:serialized, guestHash: hash, version: room.version + 1 }, color, token));
     }
@@ -162,6 +163,7 @@ async function processAPI(request, store) {
       if(body.action!=='request'&&(offer?.status!=='pending'||body.offerId!==offer.id))return json({error:'This rematch request changed. Check the room again.'},409);
       if((body.action==='request'||body.action==='accept')&&offer?.status==='pending'&&offer.accepted.includes(color))return json(exposed(room,color));
       if(!Number.isInteger(body.version)||body.version!==room.version)return json({error:'This rematch request changed. Check the room again.'},409);
+      if(['request','accept'].includes(body.action))state._nextSkills={...state._nextSkills,[color]:seatSkill(body)};
       let next;
       if(body.action==='request'){
         if(offer?.status==='pending')return json({error:'Your rival already requested a rematch. Accept or decline it.'},409);
@@ -169,7 +171,7 @@ async function processAPI(request, store) {
       }else if(body.action==='accept'){
         // Save the finished result before replacing the room's current match.
         if(!await reconcileResult(store,state))return json({error:'The last result is still saving. Please retry the rematch.'},503);
-        next={...newGame(state.scoring),matchId:crypto.randomUUID(),hostColor:3-currentHostColor,players:{1:state.players[2],2:state.players[1]}};
+        next={...newGame(state.scoring),matchId:crypto.randomUUID(),hostColor:3-currentHostColor,players:{1:{...state.players[2],...state._nextSkills?.[2]},2:{...state.players[1],...state._nextSkills?.[1]}}};
       }else{
         if((body.action==='cancel')!==offer.accepted.includes(color))return json({error:'Choose a valid rematch action.'},400);
         next={...state,rematch:{...offer,status:body.action==='cancel'?'cancelled':'declined',accepted:[],by:color}};

@@ -60,6 +60,10 @@ Requires Windows 10/11 x64, .NET Framework 4.8, and the shared WebView2 Evergree
 Most Windows PCs already have these. If the runtime is missing, obtain it from:
 https://developer.microsoft.com/microsoft-edge/webview2/
 Bots, music, progression and pass-and-play work offline. Online duels use the hosted game server.
+Skill ranks (20 kyu to 9 dan) use device-local Elo estimates separately from XP.
+AI and online games count. Ranked AI disables undo; turn Ranked AI battles off
+in Settings before a practice match. Restarting/abandoning after a move counts
+as a defeat. Ranks are not official Go credentials or a verified server ladder.
 Progress is local to this installation's Windows user profile, not an online account.
 This development release is unsigned. It is not an app-store submission.
 '@ | Set-Content -LiteralPath "$destination/START-HERE.txt" -Encoding UTF8
