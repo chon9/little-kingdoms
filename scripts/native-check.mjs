@@ -48,6 +48,9 @@ try{
   if(lite){
     await until('document.querySelector("#game-music").currentTime>0.1');
     assert.equal(await evaluate('document.querySelector("#game-music").loop'),true,'bundled music plays offline');
+    const decoded=await evaluate(`(async()=>{const{COSMETICS}=await import('/cosmetics.js');return Promise.all(COSMETICS.map(async item=>{const image=new Image();image.src=item.image;await image.decode();return image.naturalWidth>0;}));})()`);assert.equal(decoded.filter(Boolean).length,50,'all collectible artwork is bundled in the native client');
+    await click('#treasury-nav');await click('#treasury-draw');assert.equal(await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-profile-v1")).cosmetics.owned.length'),1,'native offline pull saves before the reveal');
+    await click('#treasury-equip');await click('#modal-close');await click('#treasury-nav');assert.equal(await evaluate('document.querySelector("#treasury-draw").disabled'),true,'native reload/reopen cannot spend the welcome pull twice');await click('#modal-close');
     await click('#profile-button');assert.equal(await evaluate('document.querySelectorAll(".avatar-card").length'),40);await click('#modal-close');
     await click('#rules-nav');assert.equal(await evaluate('document.querySelector(".comic-book").dataset.comicPage'),'0');
     await click('[data-comic-jump]');assert.equal(await evaluate('document.querySelector(".comic-book").dataset.comicPage'),'5');
@@ -61,7 +64,7 @@ try{
   if(lite){
     await send('Page.navigate',{url:'https://kingdoms.local/tutorial.html?lesson=single-eye'});await until('document.querySelectorAll("#tutorial-board .cell").length===81');
     await click('[data-index="29"]');await click('#tutorial-deploy');
-    assert.equal(await evaluate('document.querySelectorAll(".cell.blue.danger").length'),0);assert.equal(await evaluate('document.querySelectorAll(".cell.blue.protected-castle").length'),1);
+    assert.equal(await evaluate('document.querySelectorAll(".cell.blue.danger").length'),0);assert.equal(await evaluate('document.querySelectorAll(".cell.protected-castle").length'),0,'protected groups stay unmarked');
     await click('#tutorial-next');await click('[data-index="20"]');await click('#tutorial-deploy');assert.equal(await evaluate('document.querySelector("#tutorial-feedback").textContent.includes("sealed")'),true);
     await send('Page.navigate',{url:'https://kingdoms.local/index.html'});await until('document.querySelectorAll("#board .cell").length===81');
     assert.equal(await evaluate('document.querySelectorAll(".cell.blue,.cell.orange").length'),0,'returning from practice restores the saved real match');

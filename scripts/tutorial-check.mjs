@@ -30,7 +30,8 @@ try{
       if(step.action==='pass')await click('#tutorial-pass');else{await click(`[data-index="${step.action}"]`);await click('#tutorial-deploy');}
       await until('!document.querySelector("#tutorial-next").hidden');
       if(step.blocked){assert.equal(await evaluate(`document.querySelector('[data-index="${step.action}"]').classList.contains('blue')||document.querySelector('[data-index="${step.action}"]').classList.contains('orange')`),false);}
-      if(lesson.id==='single-eye'&&n===0){assert.equal(await evaluate('document.querySelectorAll(".cell.blue.danger").length'),0);assert.equal(await evaluate('document.querySelectorAll(".cell.blue.protected-castle").length'),1);await screenshot('tutorial-eye');await send('Page.reload');await until('document.querySelectorAll("#tutorial-board .cell").length===81 && !document.querySelector("#tutorial-next").hidden');assert.equal(await evaluate('document.querySelector("#tutorial-lesson").value'),'single-eye');}
+      assert.equal(await evaluate('document.querySelectorAll(".cell.protected-castle").length'),0,'safe groups never show a flag');
+      if(lesson.id==='single-eye'&&n===0){assert.equal(await evaluate('document.querySelectorAll(".cell.blue.danger").length'),0);await screenshot('tutorial-eye');await send('Page.reload');await until('document.querySelectorAll("#tutorial-board .cell").length===81 && !document.querySelector("#tutorial-next").hidden');assert.equal(await evaluate('document.querySelector("#tutorial-lesson").value'),'single-eye');}
       if(lesson.id==='large-territory'&&n===0)await screenshot('tutorial-territory');
       if(lesson.id==='danger'){assert.equal(await evaluate('document.querySelectorAll(".cell.blue.danger").length'),0);if(n===0)await screenshot('tutorial-defense');}
       await click('#tutorial-next');
@@ -46,7 +47,7 @@ try{
     assert.equal(await evaluate('document.querySelector("#tutorial-next").getBoundingClientRect().bottom<=innerHeight'),true,'review fits '+w+'x'+h);
   }
   await screenshot('tutorial-desktop');
-  await evaluate('navigator.serviceWorker.ready');await until(`caches.keys().then(keys=>keys.includes('little-kingdoms-v2.2.1'))`);
+  await evaluate('navigator.serviceWorker.ready');await until(`caches.keys().then(keys=>keys.includes('little-kingdoms-v2.3.0'))`);
   await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});await send('Page.reload');await until('document.querySelectorAll("#tutorial-board .cell").length===81');
   assert.deepEqual(errors,[]);console.log('Tutorial browser checks passed: all ten lessons, safe eyes, sealed territory, true danger/defense, blocked moves, refresh recovery, isolated match/XP data, phone/landscape/desktop and cached offline launch.');
 }finally{ws?.close();edge.kill();}

@@ -1,0 +1,308 @@
+{
+  "schema": 1,
+  "method": "OpenAI built-in imagegen; one commissioned image per design. Lossy WebP optimization with transparent alpha preserved on castle pieces; no EXIF or local private paths.",
+  "castles": [
+    {
+      "id": "c01",
+      "name": "Jade Rook",
+      "asset": "assets/cosmetics/c01.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite. Subject: one adorable jade-and-ivory medieval rook chess castle toy with a jade green roof rim and golden Chinese cloud motifs, inspired by Three Kingdoms fantasy. Style: polished Q chibi game art, chunky silhouette, clean dark outline, gentle cel shading, family-friendly. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or plinth. Must stay recognizable at 24 pixels. No text, no letters, no watermark, no background, no extra objects."
+    },
+    {
+      "id": "c02",
+      "name": "Jade Pagoda",
+      "asset": "assets/cosmetics/c02.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a cute jade pagoda castle with three curving Chinese roofs, ivory walls and gold bells. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c03",
+      "name": "Fox Shrine",
+      "asset": "assets/cosmetics/c03.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a tiny shrine fortress shaped around a smiling white fox, red scarf, jade roof and golden bell. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c04",
+      "name": "Dragon Keep",
+      "asset": "assets/cosmetics/c04.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a round stout ivory fortress wrapped by one cute emerald dragon, gold horns and curling tail. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c05",
+      "name": "Lantern Tower",
+      "asset": "assets/cosmetics/c05.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a tiny octagonal Chinese lantern watchtower with glowing amber paper windows and jade curved roof. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c06",
+      "name": "Bamboo Fortress",
+      "asset": "assets/cosmetics/c06.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a compact cute fortress of bamboo logs with a green leaf roof, rope lashings and ivory gate. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c07",
+      "name": "Panda Sentinel",
+      "asset": "assets/cosmetics/c07.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a round adorable panda sentinel wearing small jade and gold armor and holding a tiny shield. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c08",
+      "name": "Tiger Citadel",
+      "asset": "assets/cosmetics/c08.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a miniature ivory fortress with an adorable orange tiger face gate and jade roof. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c09",
+      "name": "Crane Spire",
+      "asset": "assets/cosmetics/c09.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: one graceful white crane perched on a short jade watchtower, folded wings, gold finial. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c10",
+      "name": "Lotus Palace",
+      "asset": "assets/cosmetics/c10.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a small rounded pink lotus-shaped palace tower with jade leaves and golden doorway. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c11",
+      "name": "Guan Yu",
+      "asset": "assets/cosmetics/c11.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a chibi Guan Yu general token with long flowing black beard, green traditional armor, red face and tiny guandao blade. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c12",
+      "name": "Zhao Yun",
+      "asset": "assets/cosmetics/c12.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a chibi Zhao Yun general token with silver and pale blue armor, white plume helmet and a short upright spear. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c13",
+      "name": "Zhuge Liang",
+      "asset": "assets/cosmetics/c13.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a chibi Zhuge Liang strategist token wearing teal scholarly robes, black scholar hat and holding a white feather fan. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c14",
+      "name": "Cao Cao",
+      "asset": "assets/cosmetics/c14.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a chibi Cao Cao general token with dark blue and gold ancient Chinese royal armor, short beard and proud smile. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c15",
+      "name": "Xiahou Dun",
+      "asset": "assets/cosmetics/c15.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a chibi Xiahou Dun general token in navy armor and gold trim, one eye patch, wild short black hair and brave grin. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c16",
+      "name": "Sima Yi",
+      "asset": "assets/cosmetics/c16.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a chibi Sima Yi strategist token in violet and navy scholarly robes, dark tall scholar cap, slim beard and sly smile. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c17",
+      "name": "Huang Yueying",
+      "asset": "assets/cosmetics/c17.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi Huang Yueying woman inventor in modest yellow and jade robes, brown twin hair buns and holding a tiny wooden gear. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c18",
+      "name": "Guan Yinping",
+      "asset": "assets/cosmetics/c18.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi Guan Yinping woman warrior in modest jade armor with red ribbon, black ponytail and small guandao. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c19",
+      "name": "Xingcai",
+      "asset": "assets/cosmetics/c19.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi Xingcai woman guardian in modest silver armor over green robes, black hair buns and small shield. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c20",
+      "name": "Zhen Ji",
+      "asset": "assets/cosmetics/c20.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi Zhen Ji noblewoman in modest flowing pale blue ancient Chinese robes, dark hair and pearl hair ornament. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c21",
+      "name": "Bao Sanniang",
+      "asset": "assets/cosmetics/c21.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi Bao Sanniang woman adventurer in modest green and cream tunic armor, chestnut ponytail, tiny cat ear styled hair ornaments and playful smile. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c22",
+      "name": "Wang Yi",
+      "asset": "assets/cosmetics/c22.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi Wang Yi woman general in modest navy and gold ancient Chinese armor, dark ponytail and tiny paired short swords. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c23",
+      "name": "Phoenix Empress",
+      "asset": "assets/cosmetics/c23.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi fantasy phoenix empress woman in modest crimson and gold long robes, elegant phoenix crown and warm smile. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c24",
+      "name": "Moon Priestess",
+      "asset": "assets/cosmetics/c24.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi moon priestess woman in modest lavender and white flowing robes, silver crescent headdress and tiny moon staff. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c25",
+      "name": "Dragon Princess",
+      "asset": "assets/cosmetics/c25.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: an adorable chibi dragon princess woman in modest turquoise and pearl robes, tiny gold dragon horns and long dark hair. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c26",
+      "name": "Celestial Rook",
+      "asset": "assets/cosmetics/c26.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: a luminous ivory celestial rook tower with floating gold halo, pastel blue crystals and chunky star battlements. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c27",
+      "name": "Cloud Qilin",
+      "asset": "assets/cosmetics/c27.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: one adorable round jade qilin fantasy guardian with white cloud mane, tiny gold horns, curled hooves and cheerful eyes. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c28",
+      "name": "Pearl Koi Guardian",
+      "asset": "assets/cosmetics/c28.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: one magical cute pearlescent koi fish guardian curled upward around a tiny jade tower, coral fins and golden whiskers. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c29",
+      "name": "Golden Phoenix Palace",
+      "asset": "assets/cosmetics/c29.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: one tiny golden palace tower cradled in stylized crimson phoenix wings with a small phoenix head roof finial. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c30",
+      "name": "Star Dragon Throne",
+      "asset": "assets/cosmetics/c30.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: one compact royal violet and gold throne tower curled around by a cute midnight blue dragon with star speckles. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    }
+  ],
+  "boards": [
+    {
+      "id": "b01",
+      "name": "Bamboo Grove",
+      "asset": "assets/cosmetics/b01.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: bamboo stalks and leaves around the edges, soft sage green paper center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b02",
+      "name": "Peach Blossom",
+      "asset": "assets/cosmetics/b02.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: delicate pink peach blossom branches framing edges, warm cream pink center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b03",
+      "name": "Jade Palace",
+      "asset": "assets/cosmetics/b03.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: elegant jade stone palace frame with gold corner ornament, quiet pale jade center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b04",
+      "name": "Moon Lake",
+      "asset": "assets/cosmetics/b04.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: silvery moonlit lake ripples around edge, cool pale blue center with subtle reflection. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b05",
+      "name": "Autumn Maple",
+      "asset": "assets/cosmetics/b05.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: orange and crimson maple leaves around edge, warm pale parchment center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b06",
+      "name": "Snowy Pass",
+      "asset": "assets/cosmetics/b06.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: snowy mountain pass at edges with frosted pines, quiet pale ice blue center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b07",
+      "name": "Red Cliffs",
+      "asset": "assets/cosmetics/b07.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: deep red sandstone cliffs and river at outer edges, warm beige center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b08",
+      "name": "Lotus Pond",
+      "asset": "assets/cosmetics/b08.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: pink lotus blooms and green pads around outer edges, quiet pale mint water center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b09",
+      "name": "Ink Mountains",
+      "asset": "assets/cosmetics/b09.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: traditional Chinese ink wash mountains at outer frame, calm ivory rice paper center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b10",
+      "name": "Lantern Festival",
+      "asset": "assets/cosmetics/b10.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: glowing red paper lanterns and tiny gold tassels along edges, soft pale amber center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b11",
+      "name": "Golden Sand",
+      "asset": "assets/cosmetics/b11.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: golden sand dunes and carved sandstone corner trims, calm pale sand center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b12",
+      "name": "Porcelain Blue",
+      "asset": "assets/cosmetics/b12.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: cobalt blue floral porcelain frame with fine curls, white porcelain center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b13",
+      "name": "Celestial Clouds",
+      "asset": "assets/cosmetics/b13.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: pastel blue and gold auspicious Chinese clouds around edge, quiet creamy sky center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b14",
+      "name": "Dragon Jade",
+      "asset": "assets/cosmetics/b14.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: deep emerald jade carved dragon corner motifs, restrained pale celadon center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b15",
+      "name": "Phoenix Vermilion",
+      "asset": "assets/cosmetics/b15.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: vermilion and gold phoenix feather motifs around edge, pale blush ivory center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b16",
+      "name": "Wisteria Garden",
+      "asset": "assets/cosmetics/b16.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: hanging purple wisteria flowers at corners, pale lilac cream center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b17",
+      "name": "Tea Pavilion",
+      "asset": "assets/cosmetics/b17.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: dark carved wood tea pavilion frame with tiny tea leaves at edges, pale natural wood center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b18",
+      "name": "Star Observatory",
+      "asset": "assets/cosmetics/b18.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: navy and gold ancient star observatory frame with tiny constellations at corners, pale dusty blue center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b19",
+      "name": "Ocean Pearls",
+      "asset": "assets/cosmetics/b19.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: turquoise waves and white pearls around edge with coral accents, pale seafoam center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b20",
+      "name": "Imperial Gold",
+      "asset": "assets/cosmetics/b20.webp",
+      "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: opulent imperial gold carved palace frame with ruby corner jewels, calm pale ivory gold center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    }
+  ]
+}

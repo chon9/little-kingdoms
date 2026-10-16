@@ -5,13 +5,15 @@
   <meta name="theme-color" content="#142c29"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="Command a little kingdom. Challenge twenty chibi generals or duel a friend in Shu & Wei.">
   <title>Little Kingdoms · Shu & Wei</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/rulebook.css"><link rel="stylesheet" href="/tutorial.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/rulebook.css"><link rel="stylesheet" href="/tutorial.css"><link rel="stylesheet" href="/collection.css"><link rel="stylesheet" href="/rankings.css">
 </head>
 <body data-screen="lobby">
   <svg class="svg-defs" aria-hidden="true"><defs>
     <symbol id="castle" viewBox="0 0 48 48"><path d="M8 40V22h32v18" fill="currentColor" stroke="var(--piece-line)" stroke-width="2"/><path d="M4 23h40L36 16H12Z" fill="var(--piece-roof)" stroke="var(--piece-line)" stroke-width="2" stroke-linejoin="round"/><path d="M14 17V9h20v8" fill="currentColor" stroke="var(--piece-line)" stroke-width="2"/><path d="M10 10h28L30 3H18Z" fill="var(--piece-roof)" stroke="var(--piece-line)" stroke-width="2" stroke-linejoin="round"/><path d="M20 40V29a4 4 0 0 1 8 0v11" fill="var(--piece-line)"/><path d="M12 40h24M17 21h14M19 8h10" stroke="#fff8d8" stroke-opacity=".35" stroke-width="2"/></symbol>
     <symbol id="swords" viewBox="0 0 32 32"><path d="m7 3 19 20-3 3L3 7V3h4Zm18 0L6 23l3 3L29 7V3h-4Z" fill="currentColor"/><path d="m4 20 8 8M20 4l8 8M3 29l4-4m18 0 4 4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
     <symbol id="shield" viewBox="0 0 32 32"><path d="M16 3 5 7v10c0 6 11 12 11 12s11-6 11-12V7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 9v13M10 15h12" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="treasure" viewBox="0 0 32 32"><path d="M4 14V9c0-4 24-4 24 0v18H4V14Zm0 0h24M10 6v21M22 6v21" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="13" y="12" width="6" height="8" rx="2" fill="currentColor"/></symbol>
+    <symbol id="podium" viewBox="0 0 32 32"><path d="M3 28V18h8v10m0 0V11h10v17m0-7h8v7M2 28h28" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m16 2 1.4 2.7 3 .4-2.2 2.1.5 3-2.7-1.4-2.7 1.4.5-3-2.2-2.1 3-.4Z" fill="currentColor"/></symbol>
     <symbol id="scroll" viewBox="0 0 32 32"><path d="M8 5h17v20H9c-6 0-6-7 0-7V5C3 5 3 12 9 12m0 13c6 0 6-7 0-7M13 10h8m-8 5h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="crown" viewBox="0 0 32 32"><path d="m4 8 7 5 5-9 5 9 7-5-3 16H7L4 8Zm4 20h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
     <symbol id="gear" viewBox="0 0 32 32"><path d="m13 3-1 4-4 2-4-1-2 5 3 3v4l-2 3 4 4 4-2 4 1 2 3 5-1 1-4 3-3 4-1v-6l-4-1-2-4-1-4Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
@@ -49,7 +51,7 @@
         </div>
       </section>
     </main>
-    <nav class="game-nav" aria-label="Game navigation"><button class="active" id="play-nav"><svg><use href="#swords"/></svg><span>Battle</span></button><button id="generals-nav"><svg><use href="#crown"/></svg><span>Generals</span></button><button id="rules-nav"><svg><use href="#scroll"/></svg><span>Codex</span></button><button id="settings-nav"><svg><use href="#gear"/></svg><span>Settings</span></button></nav>
+    <nav class="game-nav" aria-label="Game navigation"><button class="active" id="play-nav"><svg><use href="#swords"/></svg><span>Battle</span></button><button id="treasury-nav"><span class="treasury-icon" aria-hidden="true"><svg><use href="#treasure"/></svg><b id="treasury-badge">1</b></span><span>Treasury</span></button><button id="rankings-nav"><svg><use href="#podium"/></svg><span>Rankings</span></button><button id="generals-nav"><svg><use href="#crown"/></svg><span>Generals</span></button><button id="rules-nav"><svg><use href="#scroll"/></svg><span>Codex</span></button><button id="settings-nav"><svg><use href="#gear"/></svg><span>Settings</span></button></nav>
   </div>
   <aside id="cutin" class="anime-cutin" hidden aria-live="polite" aria-atomic="true"><div class="cutin-streaks"></div><div class="portrait" id="cutin-portrait"></div><div class="cutin-copy"><strong id="cutin-name"></strong><p id="cutin-line"></p></div><span class="cutin-kanji" aria-hidden="true">出陣</span></aside>
   <div class="toast" id="toast" role="status"></div><dialog id="modal"><button class="modal-close round-button" id="modal-close" aria-label="Close dialog">×</button><div id="modal-content"></div></dialog>

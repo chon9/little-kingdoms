@@ -97,7 +97,7 @@ try{
   // A single protected liberty must never show a capture warning.
   await seed([10,11,12,19,21,28,29,30],[1,2,3,9,13,18,22,27,31,37,38,39]);
   assert.equal(await mobile.evaluate('document.querySelectorAll(".cell.blue.danger").length'),0);
-  assert.equal(await mobile.evaluate('document.querySelectorAll(".cell.blue.protected-castle").length'),1);
+  assert.equal(await mobile.evaluate('document.querySelectorAll(".cell.protected-castle").length'),0,'safe groups have no flags');
   assert.equal(await mobile.evaluate('document.querySelector("[data-index=\\"10\\"]").getAttribute("aria-label").includes("protected by sealed territory")'),true);
   await mobile.screenshot('protected-eye');
   await mobile.click('.danger-help');assert.equal(await mobile.evaluate('document.querySelector(".comic-book").dataset.comicPage'),'5');
@@ -121,7 +121,7 @@ try{
   await mobile.click('#battle-back');await mobile.screenshot('mobile-lobby');await mobile.click('#resume');
   // Verify the service worker actually launches the game offline from its cache.
   await mobile.evaluate('navigator.serviceWorker.ready');
-  await mobile.until(`(async()=>{const c=await caches.open('little-kingdoms-v2.2.1');return !!(await c.match('/assets/dm-sans.woff2'));})()`);
+  await mobile.until(`(async()=>{const c=await caches.open('little-kingdoms-v2.3.0');return !!(await c.match('/assets/dm-sans.woff2'));})()`);
   await mobile.send('Network.enable');await mobile.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await mobile.send('Page.reload');await wait(200);await mobile.until('document.querySelectorAll(".cell").length===81');
   await mobile.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});

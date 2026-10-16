@@ -27,6 +27,13 @@ test('online win and loss, local play and normal AI losses award the documented 
   const state=finished();
   for(const [mode,humanColor,botLevel,xp]of [['online',1,1,150],['online',2,1,60],['local',1,1,40],['bot',2,10,65]])assert.equal(awardMatch(freshProfile(),{state,mode,humanColor,botLevel}).xp,xp);
 });
+test('a played surrender counts as a loss without XP and empty endings do not inflate records',()=>{
+  const state={...finished(),matchId:'recorded-retreat',reason:'resignation',winner:2};
+  const result=awardMatch(freshProfile(),{state,mode:'bot',humanColor:1});assert.equal(result.xp,0);assert.equal(result.profile.matches,1);assert.equal(result.profile.wins,0);
+  assert.equal(awardMatch(result.profile,{state,mode:'bot',humanColor:1}).profile.matches,1);
+  const empty=play(play({...newGame(),matchId:'empty-record'},'pass'),'pass');assert.equal(awardMatch(freshProfile(),{state:empty,mode:'local',humanColor:1}).profile.matches,0);
+  assert.equal(normalizeProfile({schema:1,matches:2,wins:99}).wins,2);
+});
 test('forty distinct avatars include twenty new portraits, level locks and first-person lines',()=>{
   assert.equal(AVATARS.length,40);assert.equal(new Set(AVATARS.map(a=>a.name)).size,40);assert.equal(AVATARS.filter(a=>a.unlock===1).length,2);
   assert.equal(AVATARS.filter(a=>a.atlas==='generals-unlock').length,20);

@@ -2,6 +2,8 @@
 
 The installed clients bundle the game's UI, rules engine, bot Worker, artwork and fonts. They do not embed a browser pointing at a hosted page. Bot and same-device PvP work offline. Online rooms use the same authoritative HTTPS Worker/D1 API as browser players, so Windows, Android and browser users can share a room.
 
+Version 2.3 bundles all 30 collectible castle sprites and 20 board surfaces. Welcome and level-up pulls, owned appearances and equipment work offline and save in the local profile. Public leaderboards need internet: device progress is unranked, and online wins/losses come from eligible server-recorded duels. Your guest commander token stays in the local profile; it is never bundled in a release. Castle equipment is shared with your next online opponent; each player sees their own board theme.
+
 No Cloudflare account is needed to play. Online play requires internet access and the continued availability of the hosted service. Hosting accounts and any usage quotas belong to the deployment platform, not to individual players. The installed game uses device CPU/RAM for rendering and bot search; the PvP server and database run in the cloud.
 
 ## Shared client build
@@ -22,7 +24,7 @@ The primary 2.1 Windows client is a small native WinForms window backed by the s
 
 Version 2.2 includes the ten-lesson playable Field Academy and the complete comic guide offline. The tutorial has its own practice boards and saved lesson progress; it does not overwrite real games or earn match XP. Tutorial, comic, board and game navigation all stay within the bundled local origin.
 
-From the repository root, build the client assets and run `./scripts/package-windows-lite.ps1`. This downloads the pinned official Microsoft WebView2 SDK 1.0.4258.31 when needed, compiles with the .NET Framework compiler, and creates `clients/releases/LittleKingdoms-2.2.1-Windows.zip`. Release folders are not silently overwritten. The ZIP is approximately 3.9 MiB, excluding the shared OS runtime. All files stay together when extracted.
+From the repository root, build the client assets and run `./scripts/package-windows-lite.ps1`. This downloads the pinned official Microsoft WebView2 SDK 1.0.4258.31 when needed, compiles with the .NET Framework compiler, and creates `clients/releases/LittleKingdoms-2.3.0-Windows.zip`. Release folders are not silently overwritten. The ZIP is approximately 3.9 MiB, excluding the shared OS runtime. All files stay together when extracted.
 
 The game opens borderless fullscreen on its first normal launch. The in-game fullscreen button, F11 and Alt+Enter toggle modes; Escape leaves fullscreen after closing any open dialog. Your last display mode saves in `%LOCALAPPDATA%/LittleKingdoms/display.txt`. Progress and preferences live in that user's WebView2 profile. Game files run at the isolated virtual origin `https://kingdoms.local/index.html`; these are mapped local assets, not an external website. There is no address bar, local HTTP server or open listening port in normal use.
 

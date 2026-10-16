@@ -1,0 +1,1 @@
+CREATE INDEX `online_results_commander_won` ON `online_results` (`commanderId`,`won`);

@@ -1,3 +1,4 @@
+import { normalizeCosmetics } from './cosmetics.js';
 // Device-local, unranked progression. Never used as proof of online identity.
 const names = [
   ['Liu Shan','劉禪'],['Mi Zhu','糜竺'],['Zhou Cang','周倉'],['Guan Ping','關平'],['Ma Dai','馬岱'],['Huang Zhong','黃忠'],['Wei Yan','魏延'],['Ma Chao','馬超'],['Zhao Yun','趙雲'],['Zhuge Liang','諸葛亮'],
@@ -9,25 +10,27 @@ export const AVATARS = names.map(([name,han],id)=>({id,name,han,color:id<10||id>
 export const PROFILE_KEY='little-kingdoms-profile-v1';
 export const xpForLevel=level=>80*(level-1)+20*(level-1)**2;
 export function levelForXP(xp){let level=1;while(level<50&&xp>=xpForLevel(level+1))level++;return level;}
-export function freshProfile(){return{schema:1,xp:0,avatar:0,matches:0,wins:0,claimed:[],defeated:[]};}
+export function freshProfile(){return{schema:1,xp:0,avatar:0,matches:0,wins:0,claimed:[],defeated:[],cosmetics:normalizeCosmetics(null,0)};}
 export function normalizeProfile(value){
   const p=freshProfile();if(value?.schema!==1)return p;
   for(const key of ['xp','matches','wins'])if(Number.isSafeInteger(value[key])&&value[key]>=0)p[key]=value[key];
+  p.wins=Math.min(p.wins,p.matches);
   p.claimed=Array.isArray(value.claimed)?[...new Set(value.claimed.filter(x=>typeof x==='string'&&x.length<=100))]:[];
   p.defeated=Array.isArray(value.defeated)?[...new Set(value.defeated.filter(x=>Number.isInteger(x)&&x>=1&&x<=10))]:[];
   if(Number.isInteger(value.avatar)&&AVATARS[value.avatar]?.unlock<=levelForXP(p.xp))p.avatar=value.avatar;
+  p.cosmetics=normalizeCosmetics(value.cosmetics,p.xp);
   return p;
 }
 export function awardMatch(profile,{state,mode,humanColor,botLevel=1}){
   const p=normalizeProfile(profile),id=state.matchId;
   if(!state.winner||typeof id!=='string'||!id||p.claimed.includes(id))return{profile:p,xp:0,duplicate:true,unlocked:[]};
   const played=state.count[1]+state.count[2],own=state.count[humanColor],won=state.winner===humanColor;
-  const eligible=played>=4&&own>=2&&!(state.reason==='resignation'&&!won);
+  const completed=played>=4&&own>=2,eligible=completed&&!(state.reason==='resignation'&&!won);
   let xp=eligible?(mode==='online'?(won?150:60):mode==='local'?40:won?60+12*botLevel:25+4*botLevel):0;
   let firstVictory=false;
   if(eligible&&mode==='bot'&&won&&!p.defeated.includes(botLevel)){xp+=40+5*botLevel;p.defeated.push(botLevel);firstVictory=true;}
   const previousLevel=levelForXP(p.xp);p.claimed.push(id);p.xp+=xp;
-  if(eligible){p.matches++;if(won)p.wins++;}
+  if(completed){p.matches++;if(won)p.wins++;}
   const level=levelForXP(p.xp),unlocked=AVATARS.filter(a=>a.unlock>previousLevel&&a.unlock<=level);
   return{profile:p,xp,previousLevel,level,unlocked,firstVictory,eligible,duplicate:false};
 }

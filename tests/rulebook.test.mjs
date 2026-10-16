@@ -16,6 +16,9 @@ test('every comic example agrees with the real game engine',()=>{
 });
 test('the complete comic includes setup, eyes, larger territory, capture, exceptions and the confirmed scoring',()=>{
   assert.equal(COMIC_PAGES.length,12);const html=comicMarkup({all:true});assert.equal((html.match(/data-rule-page=/g)||[]).length,12);
-  for(const phrase of ['40','E5','up, down, left or right','one empty square at C7','fully sealed','both colors with zero liberties','5 more raw territory','green check','red !'])assert.ok(html.includes(phrase),phrase);
+  for(const phrase of ['40','E5','up, down, left or right','one empty square at C7','fully sealed','both colors with zero liberties','5 more raw territory','Safe groups stay unmarked','red !'])assert.ok(html.includes(phrase),phrase);
+  assert.doesNotMatch(html,/green check|✓ PROTECTED|protected-castle/);
+  assert.doesNotMatch(COMIC_PAGES[5].body(),/comic-danger-badge/,'a sealed single eye has no warning icon');
+  assert.equal((COMIC_PAGES[10].body().match(/class="comic-danger-badge"/g)||[]).length,1,'the warning example marks only the legally threatened group');
   assert.equal(tryRuleExample('unknown'),null);
 });

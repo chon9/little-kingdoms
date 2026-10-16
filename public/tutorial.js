@@ -22,8 +22,8 @@ for(let i=0;i<81;i++){
   $('tutorial-board').append(cell);cells.push(cell);
 }
 function render(){
-  const lesson=LESSONS.find(l=>l.id===session.lessonId),step=tutorialStep(session),state=session.state,t=territories(state.board),danger=new Set(),protectedStones=new Set(),checks=new Set();
-  for(const g of groupSafety(state,t)){if(g.threatened)g.stones.forEach(i=>danger.add(i));if(g.protected){g.stones.forEach(i=>protectedStones.add(i));checks.add(g.stones[0]);}}
+  const lesson=LESSONS.find(l=>l.id===session.lessonId),step=tutorialStep(session),state=session.state,t=territories(state.board),danger=new Set(),protectedStones=new Set();
+  for(const g of groupSafety(state,t)){if(g.threatened)g.stones.forEach(i=>danger.add(i));if(g.protected)g.stones.forEach(i=>protectedStones.add(i));}
   $('tutorial-lesson').innerHTML=LESSONS.map((l,i)=>`<option value="${l.id}" ${l.id===lesson.id?'selected':''}>${completed.has(l.id)?'✓ ':''}${String(i+1).padStart(2,'0')} · ${l.title}</option>`).join('');
   $('course-progress').textContent=completed.size+' / '+LESSONS.length;
   $('tutorial-practice').hidden=session.done;$('tutorial-complete').hidden=!session.done;
@@ -41,7 +41,7 @@ function render(){
   const gs=groups(state.board),focus=gs.find(g=>g.color===focusColor)||gs[0],liberties=new Set(focus?.liberties||[]);$('tutorial-liberties').textContent=focus?`${focus.color===1?'Shu':'Wei'} group: ${focus.liberties.length} ${focus.liberties.length===1?'liberty':'liberties'}`:'E5 · shared wall';
   for(let i=0;i<81;i++){
     const c=state.board[i],ghost=selected===i&&!c&&!session.review,cell=cells[i];
-    cell.className='cell'+(c?' '+['','blue','orange','neutral'][c]:'')+(t.owners[i]?' owned-'+(t.owners[i]===1?'blue':'orange'):'')+(danger.has(i)?' danger':'')+(checks.has(i)?' protected-castle':'')+(selected===i?' selected':'')+(ghost?' ghost '+(step.color===1?'blue':'orange'):'')+(!session.review&&step.action===i?' tutorial-target':'')+(state.last===i?' last':'');
+    cell.className='cell'+(c?' '+['','blue','orange','neutral'][c]:'')+(t.owners[i]?' owned-'+(t.owners[i]===1?'blue':'orange'):'')+(danger.has(i)?' danger':'')+(selected===i?' selected':'')+(ghost?' ghost '+(step.color===1?'blue':'orange'):'')+(!session.review&&step.action===i?' tutorial-target':'')+(state.last===i?' last':'');
     cell.innerHTML=c||ghost?'<svg aria-hidden="true"><use href="#castle"/></svg>':'';
     if(!c&&liberties.has(i))cell.classList.add('tutorial-liberty');
     const description=c===3?'Permanent neutral shared wall':c?`${c===1?'Shu':'Wei'} castle${danger.has(i)?', danger: a legal enemy capture is available':''}${protectedStones.has(i)?', protected by sealed territory':''}`:t.owners[i]?`${t.owners[i]===1?'Shu':'Wei'} sealed territory`:'Empty';

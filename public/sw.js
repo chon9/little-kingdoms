@@ -1,6 +1,8 @@
-const CACHE='little-kingdoms-v2.2.1';
+const CACHE='little-kingdoms-v2.3.0';
+const COLLECTION_SHELL=['/cosmetics.js','/collection.js','/collection.css','/rankings.js','/rankings.css'];
+const COLLECTION_ART=[...Array.from({length:30},(_,i)=>'/assets/cosmetics/c'+String(i+1).padStart(2,'0')+'.webp'),...Array.from({length:20},(_,i)=>'/assets/cosmetics/b'+String(i+1).padStart(2,'0')+'.webp')];
 const SHELL=['/','/index.html','/styles.css','/app.js','/engine.js','/ai.js','/ai-worker.js','/progression.js','/audio.js','/tutorial.html','/tutorial.css','/tutorial-model.js','/tutorial.js','/rulebook.js','/rulebook.css','/rulebook.html','/rulebook-reader.js','/client-config.js','/favicon.svg','/manifest.webmanifest','/assets/generals.webp','/assets/generals-shock.webp','/assets/generals-sad.webp','/assets/generals-unlock.webp','/assets/river-oath.mp3','/assets/little-kingdoms-comic-rules.pdf','/assets/riverlands.webp','/assets/icon-192.png','/assets/icon-512.png','/assets/dm-sans.woff2','/assets/marcellus.woff2'];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));});
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll([...SHELL,...COLLECTION_SHELL,...COLLECTION_ART])));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{
   const url=new URL(event.request.url);

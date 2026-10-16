@@ -9,7 +9,7 @@ export const LESSONS=[
     {action:31,color:1,prompt:'Wei answered at F4. Place at E6 to connect a second blue castle side by side.',explanation:'These two blue castles form one connected group. They share their liberties. Diagonal contact alone would not connect them.'}
   ]},
   {id:'single-eye',title:'Build one protected eye',comic:5,initial:()=>position(eyeRing,siege),steps:[
-    {action:29,color:1,prompt:'This starting position is under siege. Close the gap at C6 to leave one empty eye at C7.',explanation:'The ring now has exactly one liberty: C7. It is sealed Shu territory. The green check means protected, and no red warning should appear.'},
+    {action:29,color:1,prompt:'This starting position is under siege. Close the gap at C6 to leave one empty eye at C7.',explanation:'The ring now has exactly one liberty: C7. It is sealed Shu territory, so Wei cannot enter it. Safe groups stay unmarked; no danger warning should appear.'},
     {action:20,color:2,blocked:true,prompt:'Now you are Wei. Try deploying at C7, inside the single eye. Can a capture override the territory ban?',explanation:'Blocked. Wei cannot enter sealed Shu territory, even to claim a capture. One protected eye keeps this connected group safe.'}
   ]},
   {id:'large-territory',title:'Seal a bigger area',comic:6,initial:()=>position([2,10]),steps:[
@@ -19,7 +19,7 @@ export const LESSONS=[
   ]},
   {id:'danger',title:'Read danger & defend',comic:10,initial:()=>position([0],[1]),steps:[
     {action:9,color:1,prompt:'The red ! on Shu at A9 is real: Wei could capture at A8. Extend your group to A8 before that happens.',explanation:'Good defense. Your connected group now has two liberties, so the red warning clears. Continue to see Wei’s reply.',replies:[10]},
-    {action:18,color:1,prompt:'Wei has played B8. Your group has one unprotected liberty again, so the red ! returns. Extend to A7.',explanation:'The group has breathing room again. Red ! means a legal winning enemy capture is available; a protected eye instead gets a green check.'}
+    {action:18,color:1,prompt:'Wei has played B8. Your group has one unprotected liberty again, so the red ! returns. Extend to A7.',explanation:'The group has breathing room again. Red ! means a legal winning enemy capture is available. Safe groups, including protected eyes, stay unmarked.'}
   ]},
   {id:'capture',title:'Win with one capture',comic:3,initial:()=>position([1],[0]),steps:[
     {action:9,color:1,prompt:'Wei’s corner castle has only A8 left. Place there to take its last liberty.',explanation:'Shu wins immediately. Capturing even one enemy group ends the battle; territory points do not need to be counted.'}

@@ -3,6 +3,9 @@ import { evaluate } from '/ai.js';
 import { AVATARS, PROFILE_KEY, normalizeProfile, levelForXP, xpForLevel, awardMatch, avatarLine } from '/progression.js';
 import { audioSettings, saveAudio, effect, speak } from '/audio.js';
 import { comicMarkup, wireComic } from '/rulebook.js';
+import { castleMarkup, cosmeticFor, pullsAvailable } from '/cosmetics.js';
+import { openCollection } from '/collection.js';
+import { openRankings, ensureCommander, syncCommander, commanderIdentity } from '/rankings.js';
 
 const $ = id => document.getElementById(id);
 const API_BASE = window.KINGDOMS_API_BASE || '';
@@ -56,6 +59,10 @@ function persist() {
 function toast(message) { $('toast').textContent = message; $('toast').classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('visible'), 3300); }
 const tone=effect;
 function saveProfile(){try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch{toast('Device storage is unavailable. Progress lasts for this session.');}}
+function showTreasury(){openCollection({modal,getProfile:()=>profile,onProfileChange:next=>{profile=normalizeProfile(next);saveProfile();render();},toast,tone});}
+function showRankings(){openRankings({modal,api,getProfile:()=>profile,toast});}
+function syncProgress(){if(commanderIdentity())syncCommander({api,getProfile:()=>profile}).catch(()=>{});}
+function castleFor(color){return state.players?.[color]?.castle??(config.mode==='local'||color===config.humanColor?profile.cosmetics.castle:'classic');}
 function avatarPortrait(el,id){const a=AVATARS[id]||AVATARS[0];el.style.backgroundImage=`url('/assets/${a.atlas}.webp')`;el.style.backgroundPosition=`${a.index%5*25}% ${Math.floor(a.index/5)*100/3}%`;el.setAttribute('aria-label',a.name);}
 function avatarFor(color){return state.players?.[color]?.avatar??(color===config.humanColor?profile.avatar:color===1?0:10);}
 function playerCutin(color,event,force=false){
@@ -79,6 +86,7 @@ function renderProfile(){
   const level=levelForXP(profile.xp),floor=xpForLevel(level),next=xpForLevel(level+1);
   avatarPortrait($('profile-avatar'),profile.avatar);$('profile-level').textContent='LV. '+level;$('profile-xp').textContent=level===50?'MAX LEVEL':`${profile.xp-floor} / ${next-floor} XP`;
   $('profile-fill').style.width=(level===50?100:(profile.xp-floor)/(next-floor)*100)+'%';$('profile-button').title=`${AVATARS[profile.avatar].name} · Choose avatar & view progress`;
+  $('treasury-badge').textContent=pullsAvailable(profile);$('treasury-badge').hidden=pullsAvailable(profile)===0;
 }
 function portrait(el, color, level, mood = '') {
   const index = (color === 2 ? 10 : 0) + level - 1;
@@ -137,15 +145,17 @@ function render(pop = false) {
   document.body.classList.toggle('playing',started);
   document.body.dataset.screen=screen;$('lobby-screen').hidden=screen!=='lobby';$('battle-screen').hidden=screen!=='battle';
   renderSetup();
-  const t=territories(state.board), danger=new Set(), protectedStones=new Set(), safeBadges=new Set(), hints=$('show-danger').checked, show=$('show-territory').checked;
+  const boardArt=cosmeticFor(profile.cosmetics.board,'board'),boardSpace=document.querySelector('.board-space');
+  boardSpace.classList.toggle('has-board-art',!!boardArt);boardSpace.style.setProperty('--board-art',boardArt?`url('/assets/cosmetics/${boardArt.id}.webp')`:'none');
+  const t=territories(state.board), danger=new Set(), protectedStones=new Set(), hints=$('show-danger').checked, show=$('show-territory').checked;
   if(hints) for(const g of groupSafety(state,t)) {
     if(g.threatened)g.stones.forEach(i=>danger.add(i));
-    if(g.protected){g.stones.forEach(i=>protectedStones.add(i));safeBadges.add(g.stones[0]);}
+    if(g.protected)g.stones.forEach(i=>protectedStones.add(i));
   }
   for(let i=0;i<81;i++) {
     const c=state.board[i],isSelected=selected===i,cell=cells[i],ghost=isSelected&&!c;
-    cell.className='cell'+(c?' '+['','blue','orange','neutral'][c]:'')+(show&&t.owners[i]?' owned-'+(t.owners[i]===1?'blue':'orange'):'')+(isSelected?' selected':'')+(ghost?' ghost '+(state.turn===1?'blue':'orange'):'')+(state.last===i?' last':'')+(danger.has(i)?' danger':'')+(safeBadges.has(i)?' protected-castle':'')+(pop&&state.last===i?' pop':'');
-    cell.innerHTML=c||ghost?'<svg aria-hidden="true"><use href="#castle"/></svg>':'';
+    cell.className='cell'+(c?' '+['','blue','orange','neutral'][c]:'')+(show&&t.owners[i]?' owned-'+(t.owners[i]===1?'blue':'orange'):'')+(isSelected?' selected':'')+(ghost?' ghost '+(state.turn===1?'blue':'orange'):'')+(state.last===i?' last':'')+(danger.has(i)?' danger':'')+(pop&&state.last===i?' pop':'');
+    cell.innerHTML=c===3?'<svg aria-hidden="true"><use href="#castle"/></svg>':c||ghost?castleMarkup(castleFor(c||state.turn),c||state.turn):'';
     const desc=c===3?'Neutral shared wall':c?`${colorName(c)} castle${danger.has(i)?', danger: opponent has a legal winning capture':''}${protectedStones.has(i)?', protected by sealed territory':''}`:t.owners[i]?`${colorName(t.owners[i])} sealed territory: opponent cannot enter`:'Empty';
     cell.setAttribute('aria-label',`${positionName(i)}: ${desc}${isSelected?', selected':''}`);
     cell.setAttribute('aria-pressed',String(isSelected));
@@ -157,8 +167,8 @@ function render(pop = false) {
     $(prefix+'-territory').textContent=t.scores[c]; $(prefix+'-castles').textContent=40-state.count[c];
     $(prefix+'-supply').style.width=(40-state.count[c])/40*100+'%';
     const player=AVATARS[avatarFor(c)]||AVATARS[0];
-    const name=config.mode==='bot'?(isHuman?player.name:general(c)[0]):(config.mode==='local'?colorName(c):player.name);
-    $(prefix+'-name').innerHTML=`${name} <span>${c===1?'蜀':'魏'}</span>`;
+    const name=config.mode==='bot'?(isHuman?player.name:general(c)[0]):(config.mode==='local'?colorName(c):state.players?.[c]?.displayName||player.name);
+    $(prefix+'-name').textContent=name;const faction=document.createElement('span');faction.textContent=c===1?'蜀':'魏';$(prefix+'-name').append(' ',faction);
     if(config.mode==='bot'&&!isHuman)portrait($(prefix+'-avatar'),c,config.level,emotion);
     else avatarPortrait($(prefix+'-avatar'),player.id);
     $(prefix+'-player').classList.toggle('current',started&&!state.winner&&state.turn===c);
@@ -243,7 +253,7 @@ function queueBot() {
 }
 
 function startBattle() {
-  stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;cutinCooldown=0;state={...newGame('literal'),matchId:crypto.randomUUID(),players:{[config.humanColor]:{avatar:profile.avatar}}};snapshots=[];selected=null;searchInfo=null;started=true;screen='battle';persist();render();playerCutin(config.humanColor,'start',true);queueBot();
+  stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;cutinCooldown=0;state={...newGame('literal'),matchId:crypto.randomUUID(),players:{[config.humanColor]:{avatar:profile.avatar,castle:profile.cosmetics.castle},...(config.mode==='local'?{[3-config.humanColor]:{castle:profile.cosmetics.castle}}:{})}};snapshots=[];selected=null;searchInfo=null;started=true;screen='battle';persist();render();playerCutin(config.humanColor,'start',true);queueBot();
 }
 function modal(html) {$('modal-content').innerHTML=html;$('modal').scrollTop=0;if(!$('modal').open)$('modal').showModal();}
 function replayBattle() {
@@ -288,19 +298,21 @@ function showResult() {
   tone('win');
   try{profile=normalizeProfile(JSON.parse(localStorage.getItem(PROFILE_KEY))||profile);}catch{}
   const reward=awardMatch(profile,{state,mode:config.mode,humanColor:config.humanColor,botLevel:config.level});profile=reward.profile;saveProfile();renderProfile();
+  syncProgress();
   const s=scoredWinner(state),win=state.winner;
   if(config.mode==='bot'&&win===config.humanColor){emotion='sad';clearTimeout(emotionTimer);emotionTimer=setTimeout(()=>{emotion='';render();},6000);render();}
   const reason=state.reason==='capture'?'An enemy group has no liberties. One capture, one kingdom.':state.reason==='simultaneous'?'Both sides lost their final liberties. The simultaneous capture rule awards the battle to Wei.':state.reason==='resignation'?'The opposing commander has laid down their banner.':'The final territories are sealed. The land has spoken.';
   modal(`<div class="result-view"><div class="result-heading"><div id="result-portrait" class="portrait"></div><div><p class="eyebrow">${config.mode==='local'?'BATTLE COMPLETE':win===config.humanColor?'VICTORY':'ANOTHER BATTLE AWAITS'}</p><h2>${colorName(win)} rules the riverlands.</h2></div></div><div class="result-body" tabindex="0" aria-label="Battle results and rewards"><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}${config.mode==='online'?'<p>For another duel, create a new room and invite your friend again.</p>':''}<button class="resume-btn" id="result-collection">View avatar collection →</button></div><div class="result-actions"><button class="primary-btn" id="play-again">${config.mode==='online'?'New online duel ↗':'Play again ↻'}</button><button class="secondary-btn" id="result-lobby">Battle lobby →</button></div></div>`);
   if(config.mode==='bot'&&win!==config.humanColor)portrait($('result-portrait'),win,config.level);else avatarPortrait($('result-portrait'),avatarFor(win));
   $('result-collection').onclick=showGenerals;$('play-again').onclick=replayBattle;$('result-lobby').onclick=()=>{$('modal').close();screen='lobby';render();};$('play-again').focus({preventScroll:true});
+  if(reward.level>reward.previousLevel){const bonus=document.createElement('button');bonus.className='result-pulls';bonus.textContent=`✦ +${reward.level-reward.previousLevel} level-up pull${reward.level-reward.previousLevel===1?'':'s'} · Open Treasury →`;bonus.onclick=showTreasury;$('match-reward').append(bonus);}
 }
 
 async function api(path,body,token) {
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
   try {
     const res=await fetch(API_BASE+path,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:controller.signal});
-    const data=await res.json();if(!res.ok)throw new Error(data.error||'Could not reach the room.');return data;
+    const data=await res.json();if(!res.ok){const error=new Error(data.error||'Could not reach the room.');error.status=res.status;throw error;}return data;
   }catch(e){if(e.name==='AbortError')throw new Error('Connection timed out. Your room is still saved; retry shortly.');throw e;}
   finally{clearTimeout(timer);}
 }
@@ -313,7 +325,7 @@ function connectRoom(data) {
 }
 let polling=false;
 async function pollRoom(){
-  if(!room||polling||document.hidden)return;clearTimeout(roomTimer);polling=true;const code=room.code;
+  if(!room||document.hidden)return;clearTimeout(roomTimer);if(polling){roomTimer=setTimeout(pollRoom,500);return;}polling=true;const code=room.code;
   try {
     const data=await api(`/api/rooms/${code}`,null,room.token);
     if(!room||room.code!==code)return;
@@ -340,6 +352,7 @@ $('undo').onclick=()=>{
 $('resign').onclick=()=>{modal('<p class="eyebrow">LAY DOWN YOUR BANNER</p><h2>Retreat from this battle?</h2><p>Your opponent will win. Every strategist needs a fresh start sometimes.</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-resign">Keep playing</button><button class="primary-btn" id="confirm-resign">Resign ⚑</button></div>');$('cancel-resign').onclick=()=>$('modal').close();$('confirm-resign').onclick=()=>{$('modal').close();stopBot();act('resign');};};
 $('rules-nav').onclick=showRules;
 $('generals-nav').onclick=showGenerals;$('play-nav').onclick=()=>{screen=started?'battle':'lobby';render();};
+$('treasury-nav').onclick=showTreasury;$('rankings-nav').onclick=showRankings;
 for(const id of['home','battle-back'])$(id).onclick=()=>{screen='lobby';render();};
 for(const id of['resume','return-to-room'])$(id).onclick=()=>{screen='battle';render();};
 $('fullscreen').onclick=async()=>{try{if(window.kingdomsDesktop){await window.kingdomsDesktop.toggleFullscreen();return;}if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{toast('Fullscreen unavailable on this display.');}};
@@ -355,16 +368,16 @@ $('modal-close').onclick=()=>$('modal').close();$('modal').addEventListener('cli
 $('sound').onclick=()=>{audioSettings.muted=!audioSettings.muted;saveAudio();renderSetup();if(!audioSettings.muted)tone();};
 $('profile-button').onclick=showGenerals;
 $('show-territory').onchange=()=>render();$('show-danger').onchange=()=>render();
-const dangerHelp=document.createElement('button');dangerHelp.className='danger-help';dangerHelp.type='button';dangerHelp.textContent='?';dangerHelp.setAttribute('aria-label','Explain protected eyes and danger markers');dangerHelp.title='Green check: protected territory. Red !: a legal enemy capture.';dangerHelp.onclick=()=>showRules(5);$('show-danger').closest('label').after(dangerHelp);
+const dangerHelp=document.createElement('button');dangerHelp.className='danger-help';dangerHelp.type='button';dangerHelp.textContent='?';dangerHelp.setAttribute('aria-label','Explain protected eyes and danger markers');dangerHelp.title='Red !: a legal enemy capture. Safe groups have no flag.';dangerHelp.onclick=()=>showRules(5);$('show-danger').closest('label').after(dangerHelp);
 $('create-room').onclick=async()=>{
   $('create-room').disabled=true;
-  try{const data=await api('/api/rooms',{level:config.level,hostColor:config.humanColor,avatar:profile.avatar});connectRoom(data);toast('Room created. Send the code to your rival.');}
+  try{await ensureCommander({api,getProfile:()=>profile});const commander=await syncCommander({api,getProfile:()=>profile});const data=await api('/api/rooms',{level:config.level,hostColor:config.humanColor,avatar:profile.avatar,castle:profile.cosmetics.castle,commanderToken:commander.token});connectRoom(data);toast('Room created. Send the code to your rival.');}
   catch(e){toast(e.message);}finally{$('create-room').disabled=false;}
 };
 $('join-form').onsubmit=async e=>{
   e.preventDefault();const code=$('room-code').value.trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(code)){toast('Enter the six-character room code.');return;}
   const b=$('join-form').querySelector('button');b.disabled=true;
-  try{const data=await api(`/api/rooms/${code}/join`,{avatar:profile.avatar});connectRoom(data);toast('Your rival awaits. Let the battle begin.');}
+  try{await ensureCommander({api,getProfile:()=>profile});const commander=await syncCommander({api,getProfile:()=>profile});const data=await api(`/api/rooms/${code}/join`,{avatar:profile.avatar,castle:profile.cosmetics.castle,commanderToken:commander.token});connectRoom(data);toast('Your rival awaits. Let the battle begin.');}
   catch(err){toast(err.message);}finally{b.disabled=false;}
 };
 $('copy-invite').onclick=async()=>{const link=PUBLIC_ORIGIN+'/?room='+room.code;try{await navigator.clipboard.writeText(link);toast('Invite copied. Send it to your rival.');}catch{toast('Room code: '+room.code);}};
@@ -373,7 +386,7 @@ window.addEventListener('storage',e=>{if(e.key===PROFILE_KEY){try{profile=normal
 
 render();
 let restoredRoom=false;
-try{const saved=JSON.parse(sessionStorage.getItem('little-kingdoms-room')||(API_BASE?localStorage.getItem('little-kingdoms-room'):null)||'null');if(saved?.code&&saved?.token){room={...saved,version:-1,ready:false};config=saved.config;started=true;screen='battle';restoredRoom=true;render();pollRoom();}}catch{}
+try{const saved=JSON.parse(sessionStorage.getItem('little-kingdoms-room')||(API_BASE?localStorage.getItem('little-kingdoms-room'):null)||'null');if(saved?.code&&saved?.token){room={...saved,version:-1,ready:false};config=saved.config;state=newGame('literal');snapshots=[];selected=null;started=true;screen='battle';restoredRoom=true;render();pollRoom();}}catch{}
 if(!restoredRoom){
   const invite=new URLSearchParams(location.search).get('room');
   if(invite&&/^[A-Z0-9]{6}$/i.test(invite)){stopBot();config.mode='online';started=false;screen='lobby';render();$('room-code').value=invite.toUpperCase();toast('Your invitation is ready. Press Join to take your seat.');}
