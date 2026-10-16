@@ -1,15 +1,16 @@
 import { newGame, play } from '../shared/engine.js';
+import {handleTeamRoom} from './team-api.js';
 
 const ROOM_TTL = 12 * 60 * 60 * 1000;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 async function digest(token) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))), n => n.toString(16).padStart(2, '0')).join(''); }
 function randomToken() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2, '0')).join(''); }
 function randomCode() { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from(crypto.getRandomValues(new Uint8Array(6)), n => chars[n % 32]).join(''); }
-function exposed(room, color, token) { const state=JSON.parse(room.state);delete state._resultSaved;delete state._moveReceipts;return { code: room.code, state, version: room.version, ready: !!room.guestHash&&!state.roomClosed, phase:state.roomClosed?'closed':state.winner?'finished':room.guestHash?'playing':'waiting', hostColor:room.hostColor, color, level: room.level, ...(token ? { token } : {}) }; }
-function commanderLevel(xp) { let level=1;while(level<50&&xp>=80*level+20*level**2)level++;return level; }
+function exposed(room, color, token) { const state=JSON.parse(room.state);delete state._resultSaved;delete state._moveReceipts;return { code: room.code, state, version: room.version, ready: !!room.guestHash&&!state.roomClosed, phase:state.roomClosed?'closed':state.winner?'finished':room.guestHash?'playing':'waiting', hostColor:state.hostColor??room.hostColor, color, level: room.level, ...(token ? { token } : {}) }; }
+function commanderLevel(xp) { let level=1;while(level<90&&xp>=80*level+20*level**2)level++;return level; }
 function publicCommander(row) { return {id:row.id,displayName:row.displayName,avatar:row.avatar,xp:row.xp,level:commanderLevel(row.xp),matches:row.matches,wins:row.wins,localWins:row.wins,localLosses:row.matches-row.wins,onlineWins:Number(row.onlineWins||0),onlineLosses:Number(row.onlineLosses||0)}; }
-const validAvatar=value=>Number.isInteger(value)&&value>=0&&value<40;
-const validCastle=value=>value===undefined||value==='classic'||typeof value==='string'&&/^c(?:0[1-9]|[12][0-9]|30)$/.test(value);
+const validAvatar=value=>Number.isInteger(value)&&value>=0&&value<60;
+const validCastle=value=>value===undefined||value==='classic'||typeof value==='string'&&/^c(?:0[1-9]|[1-4][0-9]|50)$/.test(value);
 function cleanName(value) { if(typeof value!=='string')return null;const name=value.normalize('NFKC').replace(/[^\p{L}\p{N} ._'\-]/gu,'').replace(/\s+/g,' ').trim();return Array.from(name).length>=2&&Array.from(name).length<=20?name:null; }
 function commanderBearer(request) { const value=request.headers.get('Authorization')||'';return value.startsWith('Bearer ')?value.slice(7):''; }
 async function commanderForToken(store, token) { return typeof token==='string'&&/^[a-f0-9]{64}$/.test(token)?store.commanderByHash(await digest(token)):null; }
@@ -88,6 +89,7 @@ async function processAPI(request, store) {
       try { body = JSON.parse(text || '{}'); } catch { return json({ error: 'Invalid request.' }, 400); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'Invalid request.' }, 400);
     }
+    if(path.startsWith('/api/team-rooms'))return await handleTeamRoom(request,url,body,store);
     if(path==='/api/commanders'&&isPost){
       const displayName=cleanName(body.displayName);
       if(!displayName||!validAvatar(body.avatar===undefined?0:body.avatar))return json({error:'Use a name of 2–20 letters or numbers and a valid avatar.'},400);
@@ -127,6 +129,7 @@ async function processAPI(request, store) {
     if (!match) return json({ error: 'Room endpoint not found.' }, 404);
     const [, code, command] = match, room = await store.get(code);
     if (!room || room.expires <= Date.now()) return json({ error: 'Room not found or expired. Check the code or create a new room.' }, 404);
+    if(JSON.parse(room.state).mode==='teams')return json({error:'This code belongs to a 2v2 team room. Choose Team battle to join it.'},409);
     if (command === 'join' && isPost) {
       if (JSON.parse(room.state).roomClosed) return json({error:'This room was closed by its host. Create or join another room.'},410);
       if (room.guestHash) return json({ error: 'This room already has two commanders.' }, 409);
@@ -138,10 +141,11 @@ async function processAPI(request, store) {
       if (!await store.join(code, room.version, hash, serialized)) return json({ error: 'Another commander just took that seat. Create a fresh room.' }, 409);
       return json(exposed({ ...room, state:serialized, guestHash: hash, version: room.version + 1 }, color, token));
     }
+    const currentHostColor=JSON.parse(room.state).hostColor??room.hostColor;
     const bearer = request.headers.get('Authorization') || '';
     const token = bearer.startsWith('Bearer ') ? bearer.slice(7) : '';
     if (!/^[a-f0-9]{64}$/.test(token)) return json({ error: 'Rejoin this room from your original tab.' }, 401);
-    const hash = await digest(token), color = hash === room.hostHash ? room.hostColor : hash === room.guestHash ? 3 - room.hostColor : null;
+    const hash = await digest(token), color = hash === room.hostHash ? currentHostColor : hash === room.guestHash ? 3 - currentHostColor : null;
     if (!color) return json({ error: 'You are not a commander in this room.' }, 403);
     if (!command && request.method === 'GET') {
       await reconcileResult(store,JSON.parse(room.state),room);
@@ -165,14 +169,14 @@ async function processAPI(request, store) {
       }else if(body.action==='accept'){
         // Save the finished result before replacing the room's current match.
         if(!await reconcileResult(store,state))return json({error:'The last result is still saving. Please retry the rematch.'},503);
-        next={...newGame(state.scoring),matchId:crypto.randomUUID(),players:state.players};
+        next={...newGame(state.scoring),matchId:crypto.randomUUID(),hostColor:3-currentHostColor,players:{1:state.players[2],2:state.players[1]}};
       }else{
         if((body.action==='cancel')!==offer.accepted.includes(color))return json({error:'Choose a valid rematch action.'},400);
         next={...state,rematch:{...offer,status:body.action==='cancel'?'cancelled':'declined',accepted:[],by:color}};
       }
       const serialized=JSON.stringify(next);
       if(!await store.update(code,room.version,serialized))return json({error:'This rematch request changed. Check the room again.'},409);
-      return json(exposed({...room,state:serialized,version:room.version+1},color));
+      return json(exposed({...room,state:serialized,version:room.version+1},next.matchId!==state.matchId?3-color:color));
     }
     if (command === 'leave' && isPost) {
       const state=JSON.parse(room.state);

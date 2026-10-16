@@ -17,7 +17,7 @@ function inspectWebP(bytes){
   }
   return{width,height,alpha,chunks};
 }
-test('all fifty collectible assets are distinct optimized WebP files with the required geometry and no private metadata',async()=>{
+test('all ninety collectible assets are distinct optimized WebP files with the required geometry and no private metadata',async()=>{
   const root=new URL('../public/assets/cosmetics/',import.meta.url),files=await readdir(root),hashes=new Set();
   assert.deepEqual(files.filter(n=>n.endsWith('.webp')).sort(),COSMETICS.map(item=>item.id+'.webp').sort());
   for(const item of COSMETICS){
@@ -27,7 +27,7 @@ test('all fifty collectible assets are distinct optimized WebP files with the re
     if(item.type==='castle')assert.equal(image.alpha,true,item.id+' preserves transparency');
     assert.ok(!image.chunks.some(type=>['EXIF','XMP '].includes(type)),item.id+' excludes source metadata');
   }
-  assert.equal(hashes.size,50,'each design has its own image');
+  assert.equal(hashes.size,90,'each design has its own image');
   const prompts=JSON.parse(await readFile(new URL('../artwork/cosmetics-prompts.json',import.meta.url),'utf8'));
   assert.deepEqual(prompts.castles.map(p=>p.id),CASTLE_ARTS.map(p=>p.id));assert.deepEqual(prompts.boards.map(p=>p.id),BOARD_ARTS.map(p=>p.id));
   for(const entry of [...prompts.castles,...prompts.boards])assert.ok(entry.prompt.length>150,'retain each complete generation brief');

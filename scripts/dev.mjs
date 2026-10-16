@@ -37,8 +37,8 @@ const server=http.createServer(async(req,res)=>{
       const response=await handleAPI(request,store);res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));return;
     }
     const requested=decodeURIComponent(url.pathname), root=path.resolve('public');
-    const file=requested==='/engine.js'||requested==='/ai.js'?path.resolve('shared',requested.slice(1)):path.resolve(root,'.'+(requested==='/'?'/index.html':requested));
-    if(!file.startsWith(root+path.sep)&&!['engine.js','ai.js'].some(n=>file===path.resolve('shared',n))){res.writeHead(403);res.end();return;}
+    const file=['/engine.js','/ai.js','/teams.js'].includes(requested)?path.resolve('shared',requested.slice(1)):path.resolve(root,'.'+(requested==='/'?'/index.html':requested));
+    if(!file.startsWith(root+path.sep)&&!['engine.js','ai.js','teams.js'].some(n=>file===path.resolve('shared',n))){res.writeHead(403);res.end();return;}
     const content=await readFile(file);res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(content);
   }catch(error){res.writeHead(error.code==='ENOENT'?404:500);res.end(error.code==='ENOENT'?'Not found':'Server error');}
 });

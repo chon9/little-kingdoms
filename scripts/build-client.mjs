@@ -2,7 +2,7 @@ import { cp,mkdir,copyFile,writeFile,readFile,readdir,unlink } from 'node:fs/pro
 import path from 'node:path';
 const directory='clients/www';
 // Mirror the shipped assets so removed soundtracks cannot survive a rebuild.
-const outputRoot=path.resolve(directory),sourceRoot=path.resolve('public'),expected=new Set(['engine.js','ai.js']);
+const outputRoot=path.resolve(directory),sourceRoot=path.resolve('public'),expected=new Set(['engine.js','ai.js','teams.js']);
 async function collect(dir,relative=''){
   for(const entry of await readdir(dir,{withFileTypes:true})){
     if(entry.isSymbolicLink())throw new Error('Client asset symlinks require review.');
@@ -21,7 +21,7 @@ async function prune(dir,relative=''){
 await collect(sourceRoot);
 await mkdir(directory,{recursive:true});await prune(outputRoot);
 await cp('public',directory,{recursive:true});
-for(const name of ['engine','ai'])await copyFile(`shared/${name}.js`,`${directory}/${name}.js`);
+for(const name of ['engine','ai','teams'])await copyFile(`shared/${name}.js`,`${directory}/${name}.js`);
 const origin='https://shu-wei-kingdoms.alexchon911.chatgpt.site';
 await writeFile(directory+'/client-config.js','window.KINGDOMS_API_BASE = '+JSON.stringify(origin)+';\n');
 const html=await readFile(directory+'/index.html','utf8');

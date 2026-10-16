@@ -1,86 +1,77 @@
 BACKGROUND MUSIC / 背景音乐
 
-GREGOR QUENDEL CINEMATIC COLLECTION / 格雷戈尔·昆德尔电影音乐精选
+ANCIENT CHINA · PIXABAY COLLECTION / 中国古风音乐精选
 
-10 tracks by Gregor Quendel, from Free Cinematic Trailer Music.
-Creator: https://www.gregorquendel.com
-Source: https://opengameart.org/content/free-cinematic-trailer-music
-Original creator-uploaded MP3 pack:
-https://opengameart.org/sites/default/files/gregor_quendel_-_cinematic_trailer_music_-_free_download_-_mp3.zip
-License: Creative Commons Attribution 4.0 International (CC BY 4.0)
-https://creativecommons.org/licenses/by/4.0/
-Verified: 2026-10-16
+Seven MP3s supplied by the project owner from Pixabay, replacing every previous recording.
+License: Pixabay Content License (not CC0)
+https://pixabay.com/service/license-summary/
+Full terms: https://pixabay.com/service/terms/
+Verified source pages: 2026-10-17
 
-Required attribution: Cinematic Trailer Music by Gregor Quendel
-(www.gregorquendel.com), from OpenGameArt, licensed CC BY 4.0.
-Changes for Little Kingdoms: transcoded to stereo 44.1 kHz / 80 kbps MP3,
-normalized to -20 LUFS, and given short entrance/exit fades.
-The full duration of each selected recording is retained.
-No endorsement by Gregor Quendel is implied. These recordings are NOT CC0.
-Reuse requires appropriate credit, the license link, and a change notice.
-Please retain this attribution when redistributing the game or these tracks.
+Music is incorporated into Little Kingdoms gameplay, artwork and user interface.
+These files are not a separately redistributable stock-music collection.
+Changes for Little Kingdoms: stereo 44.1 kHz / 112 kbps MP3, -20 LUFS loudness
+normalization, short entrance/exit fades; complete track duration retained.
+No artist endorsement is implied. Third-party music retains its own license.
+Some source pages identify Content ID registration; retain download certificates
+for any claims affecting recorded/streamed gameplay. No claim of CC0 is made.
 
-新增十首曲目来自作者在 OpenGameArt 发布的合集，采用 CC BY 4.0 署名授权，
-并非 CC0。再分发时须保留作者署名、来源、授权链接及修改说明。
-本游戏仅进行了格式转换、音量统一与首尾淡入淡出，保留完整曲长。
+七首 MP3 由项目所有者从 Pixabay 下载后提供，已完整替换旧音乐。
+采用 Pixabay 内容许可，非 CC0。音乐仅作为游戏作品的一部分使用，
+不得将这些文件作为独立素材音乐合集再分发。保留完整曲长，统一音量。
 
-01 - Cinematic Oriental Trailer - I
-In-game title: Cinematic Oriental I / 东方战歌 · 壹
-Bundled file: /assets/music/gq-01.mp3
-Duration: 39.027 seconds
-SHA-256: 82735ae98ef998e2f0cc55dd7cd478103f3e5e9b66b91b75e2f1eacb31702516
+China Chinese Background Music / 中国古风 · 山河行
+Creator: HitsLab
+Source: https://pixabay.com/music/china-chinese-china-chinese-background-music-545843/
+Bundled file: /assets/music/pb-545843.mp3
+Duration: 70.400 seconds
+Bundled SHA-256: 90349e9b08f8fc5f8c45f57765d8775b8140e898ae04c0f4d5bc46caaf2796a7
+Original download SHA-256: 560482092a484c611de38e5a87380ad8276de566069b4c9e17a88ea185254f78
 
-02 - Cinematic Orchestral Action Trailer
-In-game title: Orchestral Action / 管弦攻势
-Bundled file: /assets/music/gq-02.mp3
-Duration: 64.836 seconds
-SHA-256: 20554626255db3b1537de8b37f272b2315c018db1b0e94e4ccd4c782779e058e
+China Chinese Music / 中国古风 · 锦绣
+Creator: HitsLab
+Source: https://pixabay.com/music/china-china-chinese-music-489219/
+Bundled file: /assets/music/pb-489219.mp3
+Duration: 65.541 seconds
+Bundled SHA-256: 5bf14ee09500db5d49b5a047273a183989c6a16d27029ccad411428b0e24c027
+Original download SHA-256: e82a085923cdc758be4f3a3eeabcc9d7200c3a6ef0e26b454bc51584cfa47967
 
-03 - Cinematic Piano Trailer
-In-game title: Cinematic Piano / 钢琴战叙
-Bundled file: /assets/music/gq-03.mp3
-Duration: 44.042 seconds
-SHA-256: d771bae31796fc2de6a82623eb1d69c2abbcf1e5ae3db7e440a230e9c8eaf55f
+Chinese China Music / 中国古风 · 风云
+Creator: HitsLab
+Source: https://pixabay.com/music/china-chinese-china-chinese-music-502069/
+Bundled file: /assets/music/pb-502069.mp3
+Duration: 60.865 seconds
+Bundled SHA-256: e601f1098c075d768423492f19346558aaed261163da6f461748c24ec879185c
+Original download SHA-256: 4a5e6298005d59c52d357f7f17e89bd3cb8040fcd9e074ba945929a89b8e17b9
 
-04 - Cinematic Action Percussion Trailer
-In-game title: Action Percussion / 战鼓冲阵
-Bundled file: /assets/music/gq-04.mp3
-Duration: 78.028 seconds
-SHA-256: f369515bdcfd3cdb9fa7ecf90bf92a15f92220165506fcb0fadb234f1d325b35
+Mandarin Oriental / 东方雅韵
+Creator: geoffharvey
+Source: https://pixabay.com/music/china-mandarin-oriental-390058/
+Bundled file: /assets/music/pb-390058.mp3
+Duration: 68.101 seconds
+Bundled SHA-256: a53a6bc0859d788ce84049368becfa167eae5d9af6004ddbff8be74341dd00f1
+Original download SHA-256: d27290f61ae461797b9ffb813ba456bd109a4ee169d06a8cc0b94a1e0b704419
 
-05 - Cinematic Modern Orchestral Trailer
-In-game title: Modern Orchestra / 雄浑乐章
-Bundled file: /assets/music/gq-05.mp3
-Duration: 60.970 seconds
-SHA-256: 1e02a2e9a9cf35ccbb2c2362a58e08a4f6f5a127f1e8920a5381ee1b34751b59
+Shi · Recognition / 识 · 古风原版
+Creator: ET11LX
+Source: https://pixabay.com/music/china-chinese-ancient-style-music-love-et11lx-%E5%8F%A4%E9%A3%8E-%E6%8A%92%E6%83%85-%E8%AF%86-155926/
+Bundled file: /assets/music/pb-155926.mp3
+Duration: 48.118 seconds
+Bundled SHA-256: efb8bd1bd0ac5d5dec79214b3d114d6f62f26b35acaaf74e8b88a7d63cf41ed4
+Original download SHA-256: 0304fabe2408b767d741d586f974564d1409b7f24008e2db4d3ee46a9d5ca0c6
 
-06 - Cinematic Cello Arpeggio Trailer
-In-game title: Cello Arpeggio / 大提琴琶音
-Bundled file: /assets/music/gq-06.mp3
-Duration: 68.049 seconds
-SHA-256: 15ede5e7cabc5f7470850f2661c31403ab0bdaf6433d387fde75aad036d2079b
+Shi · Orchestral / 识 · 丰富配器版
+Creator: ET11LX
+Source: https://pixabay.com/music/world-chinese-ancient-style-music-love-et%E5%8D%81%E4%B8%80lx-%E5%8F%A4%E9%A3%8E-%E6%8A%92%E6%83%85-%E8%AF%86%E4%B8%B0%E5%AF%8C%E9%85%8D%E5%99%A8%E6%8E%A8%E9%AB%98%E6%BD%AE%E7%89%88-247345/
+Bundled file: /assets/music/pb-247345.mp3
+Duration: 66.612 seconds
+Bundled SHA-256: d37bfcfeaad6019fa41b2dc85af4a890038ed799d342b9da3169647ce83acb75
+Original download SHA-256: ac1d4e93c83534af75682087bf316607424bda460f39eb377e469b77904a3be5
 
-07 - Cinematic Minimal Orchestral Percussion Trailer
-In-game title: Orchestral Percussion / 管弦战鼓
-Bundled file: /assets/music/gq-07.mp3
-Duration: 81.048 seconds
-SHA-256: 7e2c8d92a4b7958a1c7daffb6b4a30dd918922a288272b578fe2397b020ecef8
-
-08 - Cinematic Chanting Throat Singing Percussion Trailer
-In-game title: Chanting Percussion / 吟唱战鼓
-Bundled file: /assets/music/gq-08.mp3
-Duration: 40.046 seconds
-SHA-256: 3c1e15a5029e6a2deb8e2dc336411dd99d757e827e489a4f71122f44f8066e5d
-
-11 - Cinematic Fairy Tale Trailer
-In-game title: Fairy Tale / 奇幻乐章
-Bundled file: /assets/music/gq-11.mp3
-Duration: 34.038 seconds
-SHA-256: a8c43d00385262a6cb993d3e3e9a60d3b81b6242aed2835db9d1c2b73dff756a
-
-12 - Cinematic Oriental Trailer - II
-In-game title: Cinematic Oriental II / 东方战歌 · 贰
-Bundled file: /assets/music/gq-12.mp3
-Duration: 57.051 seconds
-SHA-256: bda92dee43e6f3c8a5c484d915d77db6bee74f0c0dfed3b217c221225cc08ec4
-
+Ripple / 涟漪
+Creator: ET11LX
+Source: https://pixabay.com/music/china-ripple-chinese-ancient-style-music-romantic-love-et11lx-%E5%8F%A4%E9%A3%8E-%E6%8A%92%E6%83%85-%E6%B6%9F%E6%BC%AA-155927/
+Bundled file: /assets/music/pb-155927.mp3
+Duration: 59.115 seconds
+Bundled SHA-256: c5d27a8e6e9fbe26d2f105ba50728d01196defec6b20bc8974f943066a56816b
+Original download SHA-256: dc4e232553b50f75ede6d4413d3f0c499200b24778507481e5cef698a398b67b

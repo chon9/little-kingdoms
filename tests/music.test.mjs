@@ -38,18 +38,19 @@ test('every bundled soundtrack has a local MP3, a primary source credit, and a C
     assert.ok(sw.includes(track.file),'precache '+track.id);assert.ok(credits.includes(track.source));assert.ok(credits.includes(track.author));
     assert.match(tr(track.title),/[\u3400-\u9fff]/);
   }
-  assert.ok(credits.includes('https://creativecommons.org/licenses/by/4.0/'));setLanguage('en');
+  assert.ok(credits.includes('https://pixabay.com/service/license-summary/'));setLanguage('en');
 });
-test('only ten Gregor Quendel recordings remain and every track carries CC BY attribution',async()=>{
-  const gregor=MUSIC_TRACKS.filter(t=>t.author==='Gregor Quendel'),credits=await readFile('public/assets/music-credits.txt','utf8');
-  assert.equal(gregor.length,10);assert.equal(MUSIC_TRACKS.length,10);
+test('only the seven owner-supplied Pixabay recordings ship with accurate licenses',async()=>{
+  const credits=await readFile('public/assets/music-credits.txt','utf8');
+  assert.equal(MUSIC_TRACKS.length,7);
   assert.equal(MUSIC_TRACKS.filter(t=>t.license==='CC0 1.0').length,0);
-  for(const track of gregor){
-    assert.equal(track.license,'CC BY 4.0');assert.equal(track.licenseUrl,'https://creativecommons.org/licenses/by/4.0/');
-    assert.equal(track.source,'https://opengameart.org/content/free-cinematic-trailer-music');
+  for(const track of MUSIC_TRACKS){
+    assert.equal(track.license,'Pixabay Content License');assert.equal(track.licenseUrl,'https://pixabay.com/service/license-summary/');
+    assert.ok(track.source.startsWith('https://pixabay.com/music/'));
     assert.ok(credits.includes(track.originalTitle));assert.ok(credits.includes(track.file));
   }
-  assert.ok(credits.includes('Changes for Little Kingdoms:'));assert.ok(credits.includes('These recordings are NOT CC0.'));
+  assert.ok(credits.includes('Changes for Little Kingdoms:'));assert.ok(credits.includes('(not CC0)'));
+  for(const n of ['01','02','03','04','05','06','07','08','11','12'])await assert.rejects(readFile('public/assets/music/gq-'+n+'.mp3'),{code:'ENOENT'});
 });
 
 test('retired soundtrack files are absent from both the shipped game and its offline cache',async()=>{const sw=await readFile('public/sw.js','utf8');for(const id of ['war-theme','creed-of-course','enemy-ship','asianoriental2']){assert.ok(!MUSIC_TRACKS.some(t=>t.id===id));assert.ok(!sw.includes('/assets/'+id+'.mp3'));await assert.rejects(readFile('public/assets/'+id+'.mp3'),{code:'ENOENT'});}});

@@ -1,37 +1,48 @@
-# Spacewar Steam PvP test · 2.9.0
+# Steam multiplayer development test · 3.0.0
 
-The Windows prerelease adds **Steam PvP** alongside **Online duel** crossplay. Steam PvP uses Valve's official runtime with development **AppID 480 (Spacewar)**. Lobby membership comes from Steam Matchmaking; actual moves, passes, resignation and rematch messages use reliable **ISteamNetworkingMessages** packets on channel 27109. They never call the HTTPS room API. Steam selects the route and can use Steam Datagram Relay; the game does not promise a relay-only route. The host orders commands and both clients replay the shared rules engine.
+The Windows client provides **Steam PvP** beside the original HTTPS **Online duel / 2v2 Alliance**. Steam uses Valve's official runtime with development **AppID 480 (Spacewar)**; only this technical notice uses that platform test name. Steam itself may display the AppID's platform name. The game cannot rename Valve's test application.
 
-Peer-hosted test results are casual and never enter server-verified online win/loss rankings. Eligible completed games give 40 device-local XP; abruptly interrupted games give none.
+Actual moves, passes, resignation, heartbeats and rematch consent use reliable **ISteamNetworkingMessages** on channel 27109. They never call the HTTPS room API. Steam chooses direct or relayed routes; relay-only routing and the WebView2 overlay are not promised. The host orders commands and every peer replays the shared rules engine.
 
-## Play with a friend
+## Quick Match (1v1)
 
-1. Both players extract the complete Windows ZIP on separate PCs, run Steam, sign in with different accounts, and add each other as Steam friends.
-2. Run `LittleKingdoms.exe`, choose **Steam PvP → Connect Steam**.
-3. The host chooses Blue or Orange, then **Host Steam duel**. The board waits for the second player.
-4. Copy the large **Steam lobby ID** and send it in chat. The friend pastes it into Steam PvP and presses **Join**. This is a friends-only lobby, so Steam friendship or an explicit invite is required.
-5. Play normally. After a result, request a rematch; both players must accept before the same lobby starts a fresh match. Leave room is accessible from the battlefield, room and battle menu.
+1. Run Steam, sign in, launch this Windows build and choose **Steam PvP → Connect Steam**.
+2. Select **1v1 Duel**, then **Quick Match · 1v1**.
+3. The public queue searches compatible waiting Little Kingdoms rooms. If none exists, it creates one and periodically searches again. Concurrent hosts converge on the lower lobby ID. Full or departed-room races retry safely.
+4. Wait for an opponent, or use **Leave room** to cancel. The board starts only when both peers complete the game handshake.
 
-An optional Steam friend list sends normal lobby invites. Accepting an invite while this client is already running offers an in-game join confirmation. AppID 480 does not register this executable as the actual Steam Spacewar application, so invitations are not a supported way to launch a closed client. Manual lobby ID joining works without the overlay. WebView2 overlay behavior is not guaranteed.
+Quick Match filters game namespace, protocol 2, duel format, queue marker, waiting phase and an open slot. Private rooms do not appear in its results. A real multi-account queue convergence test remains outstanding.
 
-Temporary lost packets are retried with the same command ID, preserving confirmed history. A heartbeat pauses input during a connection interruption and restores it after communication resumes. Closing/leaving either application ends that lobby's duel; this test does not provide host migration or seat restoration after restarting the app. Create a new lobby after a departure. The original HTTPS crossplay retains its saved-seat reconnect behavior and requires no Steam client.
+## Private 1v1 or 2v2 with friends
 
-Steam initializes when the user chooses Connect Steam. A missing Steam session gives a message and leaves offline play and HTTPS crossplay available. The test requires Windows 10/11 x64, .NET Framework 4.8 and WebView2 Evergreen. F11 / Alt+Enter toggle fullscreen; Escape closes a menu before leaving fullscreen. This is an unsigned portable development ZIP.
+1. All players extract the complete ZIP on separate Windows PCs, run Steam using different accounts, and add one another as Steam friends.
+2. Choose **Steam PvP → Connect Steam**, then choose the same **1v1 / 2v2** format on every PC.
+3. The host chooses Blue or Orange and hosts a room. Share the complete large lobby ID in chat; friends paste it and press **Join**.
+4. The board waits for two or four peers respectively. In 2v2, host plus the first friend are one team; the next two friends form the other team. The host publishes a stable SteamID-to-seat roster, so clients do not infer teams from their own member-list order.
+5. **Blue always starts.** Teams share 40 castles per color; turn order is Blue A → Orange A → Blue B → Orange B. Four consecutive individual passes end 2v2. The original capture, territory lock and literal Blue handicap/scoring rules apply. Any teammate's resignation forfeits the team.
+6. After a result, everyone must explicitly agree to a rematch. The lobby and teammates stay; Blue/Orange swap. In 2v2 this requires all four consents.
 
-## Build and transport boundary
+Invites can open an in-game confirmation when the client is running. The client is not registered as the actual AppID 480 application, so invitations are not a supported way to launch a closed client. Manual lobby ID joining does not require the overlay. When an invite supplies format metadata, the client selects that format.
 
-Run `node scripts/build-client.mjs`, then `./scripts/package-windows-lite.ps1` from the root. `scripts/prepare-steam.ps1` downloads **Steamworks.NET 2025.164.1** only from its maintainer's GitHub release, checks the pinned archive SHA256, and re-extracts it before packaging. The ZIP includes the wrapper's MIT license, Valve's official `steam_api64.dll`, provenance notices and test-only `steam_appid.txt` containing 480. Source contains no Steam password or web API key. An actual Steam store release needs the game's own assigned AppID and compliance with the Steamworks SDK terms.
+Temporary packet loss retries commands with stable IDs and preserves confirmed history. Heartbeats pause input during outages. Leaving/closing a live client forfeits and blocks rematch; this test does not provide host migration or restoring a Steam seat after restarting the application. Create a new lobby after a departure. HTTPS crossplay retains its saved-seat reconnect behavior.
 
-Only the exact bundled origin can use the narrow native bridge. Arbitrary files, operating-system commands and arbitrary Steam APIs are not exposed. Incoming networking identities must belong to the same compatible two-player lobby; metadata checks `lk_game`, `lk_protocol` and the original owner. Packets are capped at 24 KiB, use a dedicated channel, and validate protocol, match identity, action history, legality and rematch consent. No host migration or anti-cheat claim is made for this casual test mode.
+## Progress and requirements
 
-## Verification
+Steam and 2v2 are casual: eligible individual seats earn **40 local XP**, not verified online leaderboard wins. A seat must have deployed two castles; the match must contain at least four. Resigning earns the resigning player no XP; interrupted Steam sessions earn none. Existing eligible server-authoritative 1v1 duel rankings remain separate.
 
-All 136 unit tests passed, including 11 Steam protocol tests for reliable retries, rule replay, capture, rematch consent, invalid messages and disconnects. `node scripts/steam-check.mjs` tests the real UI with an explicitly simulated two-peer native bridge and asserts zero HTTP room requests. `node scripts/native-check.mjs --lite --online --steam` tests the compiled host and its original crossplay; if Steam is available, it also initializes AppID 480, creates and leaves a real friends-only lobby. That real lobby creation, callback delivery, waiting screen and cleanup were verified for this prerelease.
+Requires Windows 10/11 x64, .NET Framework 4.8, shared WebView2 Evergreen and signed-in Steam for Steam mode. Offline bots/music/local play and HTTPS crossplay do not require Steam. F11 / Alt+Enter toggle fullscreen; Escape first closes a menu. The portable development ZIP is unsigned.
 
-A real **two-account Steam move exchange has not been verified** in this environment. The simulated two-peer checks do not replace that test; friend testing is the purpose of this prerelease. Browser/Windows HTTPS crossplay, native fullscreen/offline play and the existing language screens passed their regression checks.
+## Build and trust boundary
 
-## 简体中文
+Run `node scripts/build-client.mjs`, then `./scripts/package-windows-lite.ps1`. The package uses **Steamworks.NET 2025.164.1**, verified against its pinned maintainer-release SHA256. It includes licenses, Valve's official steam_api64.dll and test-only steam_appid.txt (480). No password, web API key or database credential is bundled. A production Steam release needs the developer's own assigned AppID and applicable SDK terms.
 
-双方在不同电脑上完整解压，使用不同账号登录 Steam 并互加好友。打开游戏，选择“Steam 对战 → 连接 Steam”。房主创建大厅并分享完整大厅编号，好友输入后加入。双方到齐才开局。落子、跳过、认输与再战通过 Steam 传输；再战需双方同意。符合条件的完整测试赛发放 40 本地经验，意外中断不发经验，均不计入服务器验证的在线胜负榜。原有“在线对战”仍可与浏览器、Android 和 Windows 跨平台联机，不需要 Steam。关闭或离开客户端后，请重新创建大厅；此版不支持房主迁移。此版本仅供 Spacewar 应用编号 480 开发测试，不是 Steam 商店正式版。
+Only the bundled exact origin can use the narrow native bridge. It exposes bounded lobby/friend/message operations, not arbitrary OS commands or Steam APIs. Messages are capped at 24 KiB; senders must be members of the same compatible 2/4-player lobby and the original owner must still be present. Protocol, roster, match, action history, rules and rematch consent are checked. Reliable sends request restarting broken sessions. No anti-cheat or host migration claim is made.
 
-Primary references: [Valve's Spacewar example](https://partner.steamgames.com/doc/sdk/api/example), [Networking Messages](https://partner.steamgames.com/doc/api/ISteamNetworkingMessages), [Steam Matchmaking](https://partner.steamgames.com/doc/api/ISteamMatchmaking), [official Steamworks.NET release](https://github.com/rlabrecque/Steamworks.NET/releases/tag/2025.164.1).
+## Verification and limits
+
+153 engine/API/progression/artwork/Steam unit tests pass. Browser checks cover real four-seat web gameplay and an explicitly simulated four-peer Steam bridge, Blue-first order with an Orange host, four passes, four consents, same-room color rotation, Chinese and responsive layouts. Steam simulations assert zero HTTP room requests. New artwork and all seven owner-supplied Pixabay tracks decode and work offline.
+
+The compiled native bridge initialized the official AppID 480 runtime, created real 2/4-seat private lobbies and a public Quick Match queue, delivered callbacks and left cleanly. **Real multi-account Steam moves and Quick Match convergence are not verified in this environment.** Local protocol simulations do not replace that friend test.
+
+References: [Valve development example](https://partner.steamgames.com/doc/sdk/api/example), [Networking Messages](https://partner.steamgames.com/doc/api/ISteamNetworkingMessages), [Matchmaking](https://partner.steamgames.com/doc/api/ISteamMatchmaking), [Steamworks.NET release](https://github.com/rlabrecque/Steamworks.NET/releases/tag/2025.164.1).
+

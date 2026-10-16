@@ -181,6 +181,126 @@
       "name": "Star Dragon Throne",
       "asset": "assets/cosmetics/c30.webp",
       "prompt": "Use case: stylized-concept. Asset type: transparent mobile board game piece sprite for Little Kingdoms. Subject: one compact royal violet and gold throne tower curled around by a cute midnight blue dragon with star speckles. Style: polished Q chibi Three Kingdoms fantasy game art, chunky toy proportions, clean dark outline, gentle cel shading, family-friendly and fully clothed. Composition: single centered whole object, square canvas, isolated with true transparent background, generous clear padding, front three-quarter view, no ground or separate plinth. Must stay recognizable at 24 pixels. No text, letters, watermark, background, or extra objects."
+    },
+    {
+      "id": "c31",
+      "name": "Azure Crane Marshal",
+      "asset": "assets/cosmetics/c31.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Azure Crane Marshal, an adorable chibi crane guardian in ivory and gold Han dynasty armor, folded wings and small jade spear, poised like a precious game figurine. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Neutral ivory, celadon and gold palette. Must read at 32 px."
+    },
+    {
+      "id": "c32",
+      "name": "Peach Blossom Archer",
+      "asset": "assets/cosmetics/c32.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Peach Blossom Archer, an adult chibi Chinese maiden archer, peach pink hanfu armor, flower hairpin, tiny elegant bow and quiver, cheerful confident face. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c33",
+      "name": "Jade Rabbit Keeper",
+      "asset": "assets/cosmetics/c33.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Jade Rabbit Keeper, an adorable white rabbit guardian in celadon and gold Three Kingdoms court robes, long upright ears, holding a jade ruyi scepter. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c34",
+      "name": "Bronze Tiger Guard",
+      "asset": "assets/cosmetics/c34.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Bronze Tiger Guard, a cute fierce tiger cub sentinel in burnished bronze lamellar armor and small gold helmet, heroic standing pose, round expressive amber eyes. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c35",
+      "name": "Cloud Scholar",
+      "asset": "assets/cosmetics/c35.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Cloud Scholar, a thoughtful chibi young adult male Chinese strategist, flowing ivory and smoky blue scholar robes, small feather fan, cloud shaped hat ornament, warm clever eyes. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c36",
+      "name": "Lotus Spear Maiden",
+      "asset": "assets/cosmetics/c36.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Lotus Spear Maiden, an adult chibi Chinese woman warrior, white and rose pink lotus inspired lamellar armor, petite silver spear, flower crown, smiling brave expression. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c37",
+      "name": "Moon Fox Oracle",
+      "asset": "assets/cosmetics/c37.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Moon Fox Oracle, a cute white fox court oracle with three fluffy tails, plum and silver Han dynasty robes, crescent jade charm, expressive purple eyes. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c38",
+      "name": "Bamboo Blade Captain",
+      "asset": "assets/cosmetics/c38.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Bamboo Blade Captain, a chibi adult Chinese swordsman in bamboo green and ivory light armor, short tied dark hair, sheathed dao sword, playful confident grin. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c39",
+      "name": "Vermilion Phoenix Guard",
+      "asset": "assets/cosmetics/c39.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Vermilion Phoenix Guard, a tiny cute phoenix bird warrior with crimson and cream feathers, ornate gold Han armor, elegant fan tail and beak, determined sparkling eyes. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c40",
+      "name": "Snow Leopard Rider",
+      "asset": "assets/cosmetics/c40.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Snow Leopard Rider, an adult chibi Chinese cavalry heroine in snowy ivory fur trimmed armor standing beside one tiny snow leopard cub, silver helmet ornament, confident kind expression. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c41",
+      "name": "Pearl Dragon Princess",
+      "asset": "assets/cosmetics/c41.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Pearl Dragon Princess, an adult chibi Chinese dragon princess in pearl white and jade court dress, tiny golden antler hair ornaments, small dragon tail, friendly sparkling eyes. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c42",
+      "name": "Plum Blossom Strategist",
+      "asset": "assets/cosmetics/c42.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Plum Blossom Strategist, an adult chibi Chinese woman strategist, plum pink and ivory silk robes, folded paper fan, dark hair with plum blossoms, clever gentle expression. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c43",
+      "name": "River Otter Sailor",
+      "asset": "assets/cosmetics/c43.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: River Otter Sailor, an adorable brown river otter naval captain in ivory Han dynasty sailor robes and teal scarf, tiny wooden paddle, smiling whiskered face. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c44",
+      "name": "Golden Lion Sentinel",
+      "asset": "assets/cosmetics/c44.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Golden Lion Sentinel, an adorable golden Chinese guardian lion cub in ivory and gold imperial armor, curled jade mane accents, large round friendly eyes, proud sentinel pose. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c45",
+      "name": "Celadon Bell Tower",
+      "asset": "assets/cosmetics/c45.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Celadon Bell Tower, a miniature Chinese Three Kingdoms celadon glazed bell tower rook, two tiers of sweeping jade roof tiles, golden hanging temple bell, stylized cloud ornament, no character. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c46",
+      "name": "Tea House Rook",
+      "asset": "assets/cosmetics/c46.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Tea House Rook, a miniature cozy Chinese tea house fortress rook, ivory stone walls, warm honey wooden beams, jade green tiled roof, round moon window, tiny golden teapot finial, no character. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c47",
+      "name": "Jade Turtle Fortress",
+      "asset": "assets/cosmetics/c47.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Jade Turtle Fortress, an adorable celadon turtle guardian carrying a tiny ivory Chinese fortified pagoda shell, gold corners, friendly bright eyes, tiny feet, strong clear toy figurine silhouette. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c48",
+      "name": "Lantern Qilin",
+      "asset": "assets/cosmetics/c48.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Lantern Qilin, an adorable chibi qilin guardian, cream fur and small golden antlers, jade mane, carrying a tiny glowing red lantern, big happy dark eyes, Chinese mythic figurine. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c49",
+      "name": "Silver Fan Dancer",
+      "asset": "assets/cosmetics/c49.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Silver Fan Dancer, an adult chibi Chinese woman court dancer in ivory and lavender flowing hanfu, holding one silver fan, silver flower hairpins, confident smiling face, fully clothed elegant pose. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
+    },
+    {
+      "id": "c50",
+      "name": "Nine-Tail Courtier",
+      "asset": "assets/cosmetics/c50.webp",
+      "prompt": "Use case: stylized-concept. Asset type: one transparent collectible board-game token, square. Subject: Nine-Tail Courtier, an adult chibi Chinese fox spirit woman courtier in rich plum and ivory Han dynasty court robes, fluffy white fox ears and nine soft tails, golden hair ornaments, playful dignified smile. Three Kingdoms fantasy Q graphic art, polished detailed 2D cartoon rendering, bold clear silhouette, large expressive eyes, warm gentle highlights, premium mobile game reward. Full body centered filling 88% of square, no base, no scene, genuinely transparent background. No text, letters, watermark, blue/orange faction plinth, or extra objects. Must read at 32 px."
     }
   ],
   "boards": [
@@ -303,6 +423,126 @@
       "name": "Imperial Gold",
       "asset": "assets/cosmetics/b20.webp",
       "prompt": "Use case: stylized-concept. Asset type: square decorative board skin texture for a mobile Three Kingdoms fantasy board game. Theme: opulent imperial gold carved palace frame with ruby corner jewels, calm pale ivory gold center. Style: polished hand-painted Q fantasy game art, friendly and elegant. Composition: perfectly square, perfectly flat top-down view, no perspective, decorative border only in outermost 9 percent on all sides, center 82 percent calm uniform low contrast almost empty surface on which software will draw a 9 by 9 grid. Match details at all four edges. No painted grid, no squares, no castles, no pieces, no characters, no typography, no text, no watermark."
+    },
+    {
+      "id": "b21",
+      "name": "Guandu Wheatfields",
+      "asset": "assets/cosmetics/b21.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: wheat sheaves, ancient watchtower corners, warm harvest gold."
+    },
+    {
+      "id": "b22",
+      "name": "Changban Bridge",
+      "asset": "assets/cosmetics/b22.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: stone bridge, misty river, azure sandstone."
+    },
+    {
+      "id": "b23",
+      "name": "Jianye Riverbank",
+      "asset": "assets/cosmetics/b23.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: river waves, bamboo pier, water blue."
+    },
+    {
+      "id": "b24",
+      "name": "Chengdu Courtyard",
+      "asset": "assets/cosmetics/b24.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: Sichuan courtyard tile roofs, bonsai, jade apricot."
+    },
+    {
+      "id": "b25",
+      "name": "Luoyang Moon Gate",
+      "asset": "assets/cosmetics/b25.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: moon gate carvings, vermilion rooftops, ivory jade flowers."
+    },
+    {
+      "id": "b26",
+      "name": "Hanzhong Valley",
+      "asset": "assets/cosmetics/b26.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: lush mountains, fir trees, weathered bronze."
+    },
+    {
+      "id": "b27",
+      "name": "Bronze Sparrow Terrace",
+      "asset": "assets/cosmetics/b27.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: bronze sparrows, palace roof finials, teal gold."
+    },
+    {
+      "id": "b28",
+      "name": "White Emperor City",
+      "asset": "assets/cosmetics/b28.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: white stone battlements, pink dawn clouds, jade pearl."
+    },
+    {
+      "id": "b29",
+      "name": "Dragon Well Garden",
+      "asset": "assets/cosmetics/b29.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: jade dragon well ornaments, bamboo, jade gold."
+    },
+    {
+      "id": "b30",
+      "name": "Plum Rain Pavilion",
+      "asset": "assets/cosmetics/b30.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: pavilion roof corners, plum blossoms, rainy lilac."
+    },
+    {
+      "id": "b31",
+      "name": "Crane Lake",
+      "asset": "assets/cosmetics/b31.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: crane ornaments, reeds, misty blue."
+    },
+    {
+      "id": "b32",
+      "name": "Amber Ginkgo Court",
+      "asset": "assets/cosmetics/b32.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: ginkgo leaves, lattice, chocolate gold."
+    },
+    {
+      "id": "b33",
+      "name": "Winter Bamboo",
+      "asset": "assets/cosmetics/b33.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: snow bamboo, frost, silver celadon."
+    },
+    {
+      "id": "b34",
+      "name": "Silk Road Caravan",
+      "asset": "assets/cosmetics/b34.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: oasis palms, silk bundles, brass lanterns, sandy gold."
+    },
+    {
+      "id": "b35",
+      "name": "Azure Porcelain Court",
+      "asset": "assets/cosmetics/b35.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: blue white porcelain flowers, ceramic roofs."
+    },
+    {
+      "id": "b36",
+      "name": "Summer Lotus Terrace",
+      "asset": "assets/cosmetics/b36.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: pink lotus, lily leaves, jade terrace."
+    },
+    {
+      "id": "b37",
+      "name": "Ink River Scroll",
+      "asset": "assets/cosmetics/b37.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: ink wash mountains, bamboo scroll, charcoal jade."
+    },
+    {
+      "id": "b38",
+      "name": "Firefly Garden",
+      "asset": "assets/cosmetics/b38.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: fireflies, blue flowers, dark teal gold."
+    },
+    {
+      "id": "b39",
+      "name": "Celadon Cloud Palace",
+      "asset": "assets/cosmetics/b39.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: jade palace finials, clouds, pale gold dragons."
+    },
+    {
+      "id": "b40",
+      "name": "Peach Oath Grove",
+      "asset": "assets/cosmetics/b40.webp",
+      "prompt": "Square premium Q graphic art Three Kingdoms board background. Top-down decorative tabletop panel with theme details at outer 8–10% perimeter; exceptionally quiet pale ivory parchment center occupying 80–84% for overlaid 9x9 game board. Polished 2D mobile fantasy game painting, rounded shapes, detailed trim. No text, grid, pieces, people or watermark. Theme: peach blossoms, three ceremonial cups, warm wood."
     }
   ]
 }

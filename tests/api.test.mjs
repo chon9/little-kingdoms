@@ -34,13 +34,13 @@ test('untrusted and opaque native origins are rejected including preflight and r
 test('room avatars and match identity are shared, preserved through moves and validated',async()=>{
   const store=memoryStore(),host=await call(store,'/api/rooms',{hostColor:2,level:8,avatar:30});
   assert.equal(host.state.players[2].avatar,30);assert.ok(host.state.matchId);
-  assert.equal((await call(store,`/api/rooms/${host.code}/join`,{avatar:40})).status,400);
+  assert.equal((await call(store,`/api/rooms/${host.code}/join`,{avatar:60})).status,400);
   const guest=await call(store,`/api/rooms/${host.code}/join`,{avatar:25});
   assert.equal(guest.state.players[1].avatar,25);assert.equal(guest.state.players[2].avatar,30);
   const moved=await call(store,`/api/rooms/${host.code}/move`,{action:0,version:guest.version,avatar:999},guest.token);
   assert.deepEqual(moved.state.players,guest.state.players);assert.equal(moved.state.matchId,host.state.matchId);
   const seen=await call(store,`/api/rooms/${host.code}`,null,host.token);assert.deepEqual(seen.state.players,guest.state.players);
-  for(const avatar of [-1,40,'20',{},null])assert.equal((await call(store,'/api/rooms',{hostColor:1,level:1,avatar})).status,400);
+  for(const avatar of [-1,60,'20',{},null])assert.equal((await call(store,'/api/rooms',{hostColor:1,level:1,avatar})).status,400);
 });
 
 test('online server rejects sealed territory even for its owner and preserves room version',async()=>{for(const owner of [1,2])for(const actor of [1,2]){const store=memoryStore(),{host,guest}=await pair(store),row=store.map.get(host.code),s=newGame();for(const i of [2,10,18])s.board[i]=owner;s.count[owner]=3;s.turn=actor;row.state=JSON.stringify(s);const original=row.state,version=row.version,token=actor===1?host.token:guest.token;const bad=await call(store,`/api/rooms/${host.code}/move`,{action:0,version},token);assert.equal(bad.status,422);assert.match(bad.error,/locked for both players/);assert.equal(row.state,original);assert.equal(row.version,version);const good=await call(store,`/api/rooms/${host.code}/move`,{action:30,version},token);assert.equal(good.status,200);assert.equal(good.state.board[30],actor);}});
@@ -67,11 +67,11 @@ test('leaving requires the room seat token and a current version',async()=>{
 
 async function finishedRoom(store){const {host,guest}=await pair(store),path=`/api/rooms/${host.code}`;let version=guest.version;for(const [action,token]of [[1,host.token],[0,guest.token],[30,host.token],[50,guest.token],[9,host.token]]){const n=await call(store,path+'/move',{action,version},token);assert.equal(n.status,200);version=n.version;}const ended=await call(store,path,null,host.token);assert.equal(ended.state.reason,'capture');return{host,guest,path,ended};}
 async function offerRematch(store,path,state,version,token){return call(store,path+'/rematch',{action:'request',matchId:state.matchId,version},token);}
-test('a rematch requires both distinct seats and preserves code, tokens, colors and cosmetics',async()=>{
+test('a rematch requires both distinct seats and preserves code, tokens and cosmetics while swapping colors',async()=>{
  const store=memoryStore(),{host,guest,path,ended}=await finishedRoom(store),original=structuredClone(ended.state),hashes=[store.map.get(host.code).hostHash,store.map.get(host.code).guestHash];
  const request=await offerRematch(store,path,ended.state,ended.version,host.token);assert.equal(request.status,200);assert.equal(request.state.winner,original.winner);assert.deepEqual(request.state.board,original.board);assert.deepEqual(request.state.rematch.accepted,[1]);
  const duplicate=await offerRematch(store,path,ended.state,ended.version,host.token);assert.equal(duplicate.version,request.version);assert.equal(duplicate.state.matchId,original.matchId);
- const accept=await call(store,path+'/rematch',{action:'accept',matchId:original.matchId,offerId:request.state.rematch.id,version:request.version},guest.token);assert.equal(accept.status,200);assert.equal(accept.code,host.code);assert.equal(accept.state.winner,null);assert.notEqual(accept.state.matchId,original.matchId);assert.deepEqual(accept.state.board,newGame().board);assert.deepEqual(accept.state.count,[0,0,0]);assert.equal(accept.state.turn,1);assert.deepEqual(accept.state.players,original.players);assert.deepEqual(accept.state.history,[]);assert.equal(accept.state.ply,0);assert.equal(accept.state.rematch,undefined);assert.deepEqual([store.map.get(host.code).hostHash,store.map.get(host.code).guestHash],hashes);assert.equal((await call(store,path+'/move',{action:0,version:accept.version},host.token)).status,200);assert.equal((await call(store,path,null,guest.token)).state.board[0],1);
+ const accept=await call(store,path+'/rematch',{action:'accept',matchId:original.matchId,offerId:request.state.rematch.id,version:request.version},guest.token);assert.equal(accept.status,200);assert.equal(accept.code,host.code);assert.equal(accept.state.winner,null);assert.notEqual(accept.state.matchId,original.matchId);assert.deepEqual(accept.state.board,newGame().board);assert.deepEqual(accept.state.count,[0,0,0]);assert.equal(accept.state.turn,1);assert.deepEqual(accept.state.players,{1:original.players[2],2:original.players[1]});assert.equal(accept.color,1);assert.equal(accept.hostColor,2);assert.deepEqual(accept.state.history,[]);assert.equal(accept.state.ply,0);assert.equal(accept.state.rematch,undefined);assert.deepEqual([store.map.get(host.code).hostHash,store.map.get(host.code).guestHash],hashes);assert.equal((await call(store,path+'/move',{action:0,version:accept.version},guest.token)).status,200);assert.equal((await call(store,path,null,guest.token)).state.board[0],1);
 });
 test('cancelled and declined offers retain the finished board and cannot be accepted later',async()=>{
  const store=memoryStore(),{host,guest,path,ended}=await finishedRoom(store);let version=ended.version;

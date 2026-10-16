@@ -44,11 +44,11 @@ test('guest commander identity is secret, names are safe, XP levels are derived,
 test('commander and leaderboard input bounds reject invalid data and token spoofing',async()=>{
   const store=memoryStore(),a=await identity(store,'Valid Name');
   for(const displayName of ['', 'a', 'x'.repeat(21),{},null,'👑'])assert.equal((await call(store,'/api/commanders',{displayName})).status,400);
-  for(const avatar of [-1,40,'2',null])assert.equal((await call(store,'/api/commanders',{displayName:'Okay Name',avatar})).status,400);
-  for(const fields of [{xp:-1},{xp:10000001},{xp:1.5},{xp:null},{matches:1000001},{wins:1,matches:0},{avatar:40},{displayName:'x'}])assert.equal((await call(store,'/api/commanders/me',fields,a.token)).status,400);
+  for(const avatar of [-1,60,'2',null])assert.equal((await call(store,'/api/commanders',{displayName:'Okay Name',avatar})).status,400);
+  for(const fields of [{xp:-1},{xp:10000001},{xp:1.5},{xp:null},{matches:1000001},{wins:1,matches:0},{avatar:60},{displayName:'x'}])assert.equal((await call(store,'/api/commanders/me',fields,a.token)).status,400);
   for(const query of ['kind=hack','limit=0','limit=101','limit=2.5','limit=NaN'])assert.equal((await call(store,'/api/leaderboard?'+query)).status,400);
   assert.equal((await call(store,'/api/rooms',{hostColor:1,level:5,commanderToken:'f'.repeat(64)})).status,401);
-  for(const castle of ['c00','c31','c1',{},['c01'],null])assert.equal((await call(store,'/api/rooms',{hostColor:1,level:5,castle})).status,400);
+  for(const castle of ['c00','c51','c1',{},['c01'],null])assert.equal((await call(store,'/api/rooms',{hostColor:1,level:5,castle})).status,400);
   const host=await call(store,'/api/rooms',{hostColor:1,level:5,commanderId:a.commander.id});assert.equal(host.state.players[1].commanderId,undefined);
 });
 
@@ -61,7 +61,7 @@ test('server records eligible online surrender exactly once and local progress c
   const stale=await call(store,`/api/rooms/${host.code}/move`,{action:'resign',version},host.token);assert.equal(stale.status,409);assert.equal(store.results.size,2);
   const board=await call(store,'/api/leaderboard?kind=wins');assert.equal(board.source,'server-recorded');assert.equal(board.entries[0].id,b.commander.id);assert.equal(board.entries[0].onlineWins,1);
   const loser=await call(store,'/api/commanders/me',undefined,a.token);assert.equal(loser.commander.onlineLosses,1);assert.equal(loser.commander.onlineWins,0);
-  const fake=await call(store,'/api/commanders/me',{xp:10000000,matches:999999,wins:999999,onlineWins:999999},a.token);assert.equal(fake.commander.onlineWins,0);assert.equal(fake.commander.level,50);
+  const fake=await call(store,'/api/commanders/me',{xp:10000000,matches:999999,wins:999999,onlineWins:999999},a.token);assert.equal(fake.commander.onlineWins,0);assert.equal(fake.commander.level,90);
 });
 
 test('empty pass games, self play, one-castle games, and legacy anonymous opponents do not farm records',async()=>{

@@ -29,16 +29,19 @@ $compiler='C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 if($LASTEXITCODE -ne 0){throw 'Native Windows compilation failed'}
 @'
 Run LittleKingdoms.exe. Keep all files in this folder together.
-SPACEWAR STEAM PVP TEST BUILD -- development AppID 480, not a Steam store release.
-1. Both players extract this complete ZIP on separate Windows PCs.
+STEAM MULTIPLAYER DEVELOPMENT BUILD -- AppID 480, not a Steam store release.
+1. All players extract this complete ZIP on separate Windows PCs.
 2. Run Steam, sign in with different accounts, and add each other as Steam friends.
 3. Run LittleKingdoms.exe, choose Steam PvP, then Connect Steam.
-4. Host chooses Blue/Orange and presses Host Steam duel.
-5. Copy the large Steam lobby ID and send it to your friend in chat.
-6. Friend pastes the full ID into Steam PvP and presses Join.
-The board opens only when both players connect. Moves/pass/resign/rematch use
+4. Choose Quick Match for 1v1, or choose 1v1/2v2 and host a private Steam room.
+5. For private games, send the large Steam lobby ID to your friends in chat.
+6. Friends choose the same 1v1/2v2 format, paste the full ID and press Join.
+The board opens only when all required players connect. Moves/pass/resign/rematch use
 SteamNetworkingMessages reliable packets; they do not use the Cloudflare room API.
-After a result, request a rematch; both players must accept. The ID stays the same.
+After a result, everyone must accept a rematch. Colors swap; the ID stays the same.
+2v2 teams: host + first friend versus next two friends. Blue always starts; turns
+alternate Blue A, Orange A, Blue B, Orange B. Both teammates share 40 castles.
+Four consecutive individual passes end 2v2. A resignation forfeits that team.
 Use Leave room to close the lobby. Temporary connection loss pauses input; keep
 the client open while Steam reconnects. Host migration/rejoining a closed app is
 not supported in this test. Start a new lobby after either client closes/leaves.
@@ -47,7 +50,7 @@ fallback when the Steam overlay or invitation launch is unavailable.
 Steam test duels are casual: eligible completed games award 40 local XP and never
 create verified online wins/losses. Abruptly interrupted games award no XP.
 Online duel is the original HTTPS crossplay mode for browser/Android/Windows;
-it works without Steam. Steam PvP requires both players to use this Windows build.
+it works without Steam. Steam PvP requires all players to use this Windows build.
 This package uses only the official Valve runtime, not a Steam emulator.
 No Steam password or web API key is needed by the game. AppID 480 must be replaced
 with the game's own assigned AppID before an actual Steam release.

@@ -12,14 +12,16 @@ async function addDirectory(directory, prefix = '') {
   }
 }
 await addDirectory('public');
-for(const name of ['engine','ai'])assets['/'+name+'.js']={type:types['.js'],body:await readFile('shared/'+name+'.js','utf8'),base64:false};
+for(const name of ['engine','ai','teams'])assets['/'+name+'.js']={type:types['.js'],body:await readFile('shared/'+name+'.js','utf8'),base64:false};
 await mkdir('generated',{recursive:true});
 const assetSource = 'export const ASSETS = '+JSON.stringify(assets)+';\n';
 await writeFile('generated/assets.js',assetSource);
 const engine = await readFile('shared/engine.js','utf8');
+const teams = (await readFile('shared/teams.js','utf8')).replace(/^import .*;\r?\n/gm,'');
+const teamAPI = (await readFile('server/team-api.js','utf8')).replace(/^import .*;\r?\n/gm,'');
 const api = (await readFile('server/api.js','utf8')).replace(/^import .*;\r?\n/gm,'');
 const worker = (await readFile('worker/index.js','utf8')).replace(/^import .*;\r?\n/gm,'');
 await mkdir('dist/server',{recursive:true});await mkdir('dist/.openai',{recursive:true});
-await writeFile('dist/server/index.js',assetSource+engine+'\n'+api+'\n'+worker);
+await writeFile('dist/server/index.js',assetSource+engine+'\n'+teams+'\n'+teamAPI+'\n'+api+'\n'+worker);
 try{await copyFile('.openai/hosting.json','dist/.openai/hosting.json');}catch(error){if(error.code!=='ENOENT')throw error;}
 console.log(`Built self-contained Worker: ${Object.keys(assets).length} assets.`);

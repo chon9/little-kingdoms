@@ -1,17 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {tr,setLanguage,getLanguage,LANGUAGE_KEY} from '../public/i18n.js';
-import {AVATARS} from '../public/progression.js';
+import {AVATARS,avatarLine} from '../public/progression.js';
 import {COSMETICS} from '../public/cosmetics.js';
 
 test('English and Simplified Chinese switch without changing source text, and invalid language codes are ignored',()=>{
   setLanguage('en');assert.equal(tr('Play again'),'Play again');setLanguage('zh-Hans');assert.equal(getLanguage(),'zh-Hans');assert.match(tr('Play again'),/[\u3400-\u9fff]/);setLanguage('invalid');assert.equal(getLanguage(),'zh-Hans');setLanguage('en');assert.equal(tr('Play again'),'Play again');assert.equal(LANGUAGE_KEY,'little-kingdoms-language');
 });
-test('all forty general names and fifty collectible names have Chinese translations',()=>{
+test('all sixty general names and ninety collectible names have Chinese translations',()=>{
   setLanguage('zh-Hans');
   for(const item of [...AVATARS,...COSMETICS]){const translated=tr(item.name);assert.match(translated,/[\u3400-\u9fff]/,item.name);assert.doesNotMatch(translated,/[A-Za-z]{2,}/,item.name);}
   for(const avatar of AVATARS)assert.match(tr(avatar.han),/[\u3400-\u9fff]/);
   setLanguage('en');
+});
+
+test('new general speech, team turns, rematch consent and download actions are localized',()=>{
+  setLanguage('zh-Hans');
+  for(const a of AVATARS.slice(40))for(const event of['start','move','win','loss','threat','territory'])assert.doesNotMatch(tr(avatarLine(a.id,event)),/[A-Za-z]{2,}/);
+  for(const s of['P3 is planning','P3 · Shu moves','Blue A → Orange A → Blue B → Orange B','3 / 4 consecutive passes. Blue A → Orange A → Blue B → Orange B','2 / 4 commanders accepted. Colors swap when all four are ready.','All four commanders must accept. Teams swap Blue and Orange for the next battle.'])assert.doesNotMatch(tr(s),/[A-Za-z]{2,}/,s);
+  assert.match(tr('Download Windows ↓'),/下载/);assert.match(tr('Your avatars · 60'),/头像/);setLanguage('en');
 });
 test('specific tutorial, reward and accessible-name patterns take priority over punctuation fallbacks',()=>{
   setLanguage('zh-Hans');

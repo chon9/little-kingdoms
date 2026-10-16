@@ -28,7 +28,7 @@ try{
   const switchLanguage=async language=>{await evaluate(`(async()=>{const i=await import('/i18n.js');await i.setLanguage(${JSON.stringify(language)});})()`);await until(`document.documentElement.lang===${JSON.stringify(language)}`);await wait(100);};
   const scan=async label=>{await wait(80);const result=await evaluate(`(()=>{
     const found=[],visible=e=>{if(!e||e.closest('script,style,svg,[hidden],[aria-hidden="true"],[data-user-content],[data-l10n-skip],.board-coordinates,.side-coordinates'))return false;const c=getComputedStyle(e);return c.display!=='none'&&c.visibility!=='hidden'&&e.getClientRects().length>0;};
-    const english=s=>/[A-Za-z]{2,}/.test(s.replace(/\\b(?:XP|AI|PDF|MP3|WebView2|APK|F11|Alt|Enter|Escape|Ctrl|Shift|Tab|W|L|EN)\\b/g,''));
+    const english=s=>/[A-Za-z]{2,}/.test(s.replace(/\\b(?:XP|AI|PDF|MP3|WebView2|Windows|APK|F11|Alt|Enter|Escape|Ctrl|Shift|Tab|W|L|EN)\\b/g,''));
     const tree=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);while(tree.nextNode()){const n=tree.currentNode,e=n.parentElement,t=n.nodeValue.trim().replace(/\\s+/g,' ');let check=t;if(e.matches('.comic-board-label'))check=check.replace(/\\b[A-I]{2,9}\\b/g,'');if(e.matches('.comic-source a'))check=check.replace('Great Kingdom','');if(e.closest('.music-credit'))check=check.replace(/Tozan|CC0(?: 1\\.0)?/g,'');if(t&&visible(e)&&english(check))found.push({kind:'text',selector:e.id?'#'+e.id:e.className||e.tagName,text:t});}
     for(const e of document.querySelectorAll('[aria-label],[title],[placeholder]'))if(visible(e))for(const a of ['aria-label','title','placeholder']){const t=e.getAttribute(a),nickname=e.matches('.commander-card-top')?e.querySelector('.commander-summary-name strong')?.textContent:null,check=nickname?t?.split(nickname).join(''):t;if(check&&english(check))found.push({kind:a,selector:e.id?'#'+e.id:e.className||e.tagName,text:t});}
     return found;
@@ -49,7 +49,7 @@ try{
   assert.deepEqual(await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state'),state,'Live language switching preserves the match');
   await screenshot('battle-phone');
   await click('#treasury-nav');await scan('treasury-summon');
-  for(const [tab,count]of[['castle',30],['board',20]]){
+  for(const [tab,count]of[['castle',50],['board',40]]){
     await click(`[data-treasury-tab="${tab}"]`);assert.equal(await evaluate('document.querySelectorAll("[data-preview]").length'),count);
     const names=await evaluate('Array.from(document.querySelectorAll("[data-preview] strong"),e=>e.textContent)');assert.equal(names.filter(n=>/[\u3400-\u9fff]/.test(n)).length,count,'Every '+tab+' artwork has a Chinese name');await scan('treasury-'+tab);
   }
@@ -58,7 +58,7 @@ try{
   await click('#rankings-nav');await until('document.querySelector("#commander-name")!==null');await scan('rankings-level');
   const name=await evaluate('document.querySelector(".commander-summary-name strong").textContent');await switchLanguage('en');await switchLanguage('zh-Hans');assert.equal(await evaluate('document.querySelector(".commander-summary-name strong").textContent'),name,'Public nicknames are never translated');
   await click('.commander-card-top');await scan('rankings-profile');await click('#rank-wins');await until('document.querySelector("#commander-name")!==null');await scan('rankings-online');await click('#rank-close');
-  await click('#generals-nav');assert.equal(await evaluate('document.querySelectorAll(".avatar-card").length'),40);await scan('general-avatars');await click('#rival-tab');await scan('general-roster');await click('#modal-close');
+  await click('#generals-nav');assert.equal(await evaluate('document.querySelectorAll(".avatar-card").length'),60);await scan('general-avatars');await click('#rival-tab');await scan('general-roster');await click('#modal-close');
   await click('#rules-nav');
   for(let n=0;n<12;n++){await until(`document.querySelector('.comic-book')?.dataset.comicPage==='${n}'`);await scan('comic-'+(n+1));for(const selector of await evaluate('Array.from(document.querySelectorAll("[data-rule-page]:not([hidden]) [data-rule-try]"),e=>`[data-rule-page]:not([hidden]) [data-rule-try="${e.dataset.ruleTry}"]`)')){await click(selector);await scan('comic-'+(n+1)+'-feedback');}if(n<11)await click('#comic-next');}
   await screenshot('comic-phone');await click('#modal-close');
@@ -66,7 +66,7 @@ try{
   for(const lesson of LESSONS){await evaluate(`(()=>{const e=document.querySelector('#tutorial-lesson');e.value=${JSON.stringify(lesson.id)};e.dispatchEvent(new Event('change'));})()`);for(let n=0;n<lesson.steps.length;n++){await scan('tutorial-'+lesson.id+'-step-'+n);const action=lesson.steps[n].action;if(action==='pass')await click('#tutorial-pass');else{await click(`[data-index="${action}"]`);await click('#tutorial-deploy');}await until('!document.querySelector("#tutorial-next").hidden');await scan('tutorial-'+lesson.id+'-review-'+n);await click('#tutorial-next');}}
   await scan('tutorial-complete');await screenshot('tutorial-phone');
   await navigate();assert.equal(await evaluate('document.documentElement.lang'),'zh-Hans','Language survives reload');assert.deepEqual(await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state'),state,'Tutorial and language switching preserve the live battle');
-  const fits=async(selectors,label)=>{for(const selector of selectors)assert.equal(await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e)return false;const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1;})()`),true,selector+' fits '+label);assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,label+' has no horizontal overflow');};
+  const fits=async(selectors,label)=>{for(const selector of selectors)assert.equal(await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e)return false;const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1;})()`),true,selector+' fits '+label+' '+JSON.stringify(await evaluate(`document.querySelector(${JSON.stringify(selector)})?.getBoundingClientRect().toJSON()`)));assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,label+' has no horizontal overflow');};
   for(const [w,h]of[[320,568],[390,844],[844,390],[1366,768]]){
     await send('Emulation.setDeviceMetricsOverride',{width:w,height:h,deviceScaleFactor:1,mobile:w<900});await wait(150);const size=w+'x'+h;
     await fits(['#board','#deploy','#pass','#undo','#language-switch'],size+' battle');
@@ -79,7 +79,7 @@ try{
   assert.deepEqual(errors,[],'No uncaught browser exceptions');
   // Check translations and the Chinese book from the offline installation cache.
   await evaluate('navigator.serviceWorker.ready');
-  await until(`(async()=>{const c=await caches.open('little-kingdoms-v2.9.0');return !!(await c.match('/locales/zh-rules.js'))&&!!(await c.match('/assets/little-kingdoms-comic-rules-zh-Hans.pdf'));})()`);
+  await until(`(async()=>{const c=await caches.open('little-kingdoms-v3.0.0');return !!(await c.match('/locales/zh-rules.js'))&&!!(await c.match('/assets/little-kingdoms-comic-rules-zh-Hans.pdf'));})()`);
   await send('Network.enable');await send('Network.clearBrowserCache');await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
   await navigate();assert.equal(await evaluate('document.documentElement.lang'),'zh-Hans');await scan('offline-battle');
   await switchLanguage('en');await switchLanguage('zh-Hans');assert.deepEqual(await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state'),state,'offline language switching preserves the match');
@@ -91,7 +91,7 @@ try{
   await writeFile('artifacts/language-leaks.json',JSON.stringify(leaks,null,2));
   const remaining=leaks.flatMap(x=>x.items.map(item=>({...item,screen:x.screen})));console.log(JSON.stringify({screens:leaks.length,englishCandidates:remaining.length,report:'artifacts/language-leaks.json'}));
   assert.equal(remaining.length,0,'All inspected Chinese screens are localized; inspect artifacts/language-leaks.json for missing strings');
-  console.log('Language browser checks passed: live EN/简体中文 switching, saved match preservation, all fifty artwork names, draw/equip, public nickname safety, rankings, forty avatars, twelve comic chapters and every playable tutorial step.');
+  console.log('Language browser checks passed: live EN/简体中文 switching, saved match preservation, all ninety artwork names, draw/equip, public nickname safety, rankings, sixty avatars, twelve comic chapters and every playable tutorial step.');
 }finally{await writeFile('artifacts/language-leaks.json',JSON.stringify(leaks,null,2));ws?.close();edge.kill();}
 
 

@@ -34,8 +34,27 @@ test('a played surrender counts as a loss without XP and empty endings do not in
   const empty=play(play({...newGame(),matchId:'empty-record'},'pass'),'pass');assert.equal(awardMatch(freshProfile(),{state:empty,mode:'local',humanColor:1}).profile.matches,0);
   assert.equal(normalizeProfile({schema:1,matches:2,wins:99}).wins,2);
 });
-test('forty distinct avatars include twenty new portraits, level locks and first-person lines',()=>{
-  assert.equal(AVATARS.length,40);assert.equal(new Set(AVATARS.map(a=>a.name)).size,40);assert.equal(AVATARS.filter(a=>a.unlock===1).length,2);
-  assert.equal(AVATARS.filter(a=>a.atlas==='generals-unlock').length,20);
+test('sixty distinct avatars include twenty new individual portraits, level locks and first-person lines',()=>{
+  assert.equal(AVATARS.length,60);assert.equal(new Set(AVATARS.map(a=>a.name)).size,60);assert.equal(AVATARS.filter(a=>a.unlock===1).length,2);
+  assert.equal(AVATARS.filter(a=>a.atlas==='generals-unlock'&&!a.image).length,20);
   for(const a of AVATARS)for(const event of ['start','move','territory','threat','win','loss'])assert.match(avatarLine(a.id,event),/\bI\b|\bMy\b/);
+});
+
+test('new portraits unlock one per level 22–41 and preserve existing equipment',async()=>{
+  const {readFile}=await import('node:fs/promises'),{createHash}=await import('node:crypto'),hashes=new Set();
+  for(const a of AVATARS.slice(40)){
+    assert.equal(a.unlock,a.id-18);assert.equal(normalizeProfile({schema:1,xp:xpForLevel(a.unlock)-1,avatar:a.id}).avatar,0);
+    assert.equal(normalizeProfile({schema:1,xp:xpForLevel(a.unlock),avatar:a.id}).avatar,a.id);
+    const bytes=await readFile('public'+a.image);assert.equal(bytes.toString('ascii',8,12),'WEBP');assert.ok(bytes.length<100000);hashes.add(createHash('sha256').update(bytes).digest('hex'));
+  }
+  assert.equal(hashes.size,20);assert.equal(levelForXP(xpForLevel(90)),90);
+  const old=normalizeProfile({schema:1,xp:xpForLevel(50),avatar:39,cosmetics:{owned:['c30','b20'],spent:2,castle:'c30',board:'b20'}});
+  assert.equal(old.avatar,39);assert.equal(old.cosmetics.castle,'c30');assert.equal(old.cosmetics.board,'b20');
+});
+
+test('team rewards require the individual seat to play and exclude the resigning seat',()=>{
+  const base={...finished('team-reward'),mode:'teams',resignedSeat:2,reason:'resignation',seatCounts:[0,2,2,0,0],winner:2};
+  assert.equal(awardMatch(freshProfile(),{state:base,mode:'local',humanColor:1,humanSeat:1}).xp,40);
+  assert.equal(awardMatch(freshProfile(),{state:base,mode:'local',humanColor:1,humanSeat:2}).xp,0);
+  assert.equal(awardMatch(freshProfile(),{state:base,mode:'local',humanColor:2,humanSeat:3}).xp,0);
 });

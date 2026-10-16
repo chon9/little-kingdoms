@@ -5,15 +5,15 @@ const source=(await readFile(new URL('../public/steam-session.js',import.meta.ur
 const {SteamSession}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const HOST='76561198000000001',GUEST='76561198000000002',LOBBY='109775240000000001';
 function pair(hostColor=1){
-  let clock=1000,next=0;const events=new Map(),queue=[],errors=[],updates=[[],[]],packets=[];
-  const bridge=id=>({on:fn=>{events.set(id,fn);return()=>events.delete(id);},create:async()=>({ok:true}),join:async()=>({ok:true}),leave:async()=>({ok:true}),send:async(peer,payload)=>{packets.push({id,peer,payload});queue.push(()=>events.get(peer)?.({type:'packet',from:id,payload}));return{ok:true};}});
+  let clock=1000,next=0;const events=new Map(),queue=[],errors=[],updates=[[],[]],packets=[],quickCalls=[];
+  const bridge=id=>({on:fn=>{events.set(id,fn);return()=>events.delete(id);},quick:async()=>{quickCalls.push(id);return{ok:true};},create:async()=>({ok:true}),join:async()=>({ok:true}),leave:async()=>({ok:true}),send:async(peer,payload)=>{packets.push({id,peer,payload});queue.push(()=>events.get(peer)?.({type:'packet',from:id,payload}));return{ok:true};}});
   const make=(id,n)=>new SteamSession({bridge:bridge(id),identity:{id,name:n?'Guest':'Host'},profile:{avatar:n?10:0,castle:n?'c30':'c01'},onUpdate:d=>updates[n].push(d),onError:e=>errors.push(e),now:()=>clock,uuid:()=>`test-command-${++next}`,autoTick:false});
   const host=make(HOST,0),guest=make(GUEST,1);
   const drain=()=>{let n=0;while(queue.length){assert.ok(++n<1000,'transport should settle');queue.shift()();}};
   const members=[{id:HOST,name:'Host'},{id:GUEST,name:'Guest'}];
   const event=(id,membersOverride=members,hostPresent=true)=>events.get(id)?.({type:'lobby',lobby:LOBBY,host:HOST,hostPresent,members:membersOverride});
   async function start(){await host.create(hostColor);event(HOST,[members[0]]);assert.equal(host.ready,false);await guest.join(LOBBY);event(HOST);event(GUEST);drain();await Promise.resolve();drain();assert.equal(host.ready,true);assert.equal(guest.ready,true);}
-  return{host,guest,events,queue,packets,errors,updates,start,drain,event,advance:ms=>clock+=ms};
+  return{host,guest,events,queue,packets,errors,updates,start,drain,event,quickCalls,advance:ms=>clock+=ms};
 }
 async function act(p,who,action){const promise=who.act(action);p.drain();await promise;p.drain();assert.deepEqual(p.host.state,p.guest.state);}
 async function finish(p){for(let i=0;i<2;i++)await act(p,p.host.color===p.host.state.turn?p.host:p.guest,'pass');}
@@ -27,10 +27,10 @@ test('real move commands, passes, capture and off-turn resignation replay throug
 test('illegal moves, wrong turns and occupied neutral square do not change a Steam game',async()=>{
   const p=pair();await p.start();const before=JSON.stringify(p.host.state);const wrong=p.guest.act(30);p.drain();await assert.rejects(wrong,/turn/);await assert.rejects(p.host.act(40),/already a castle/);assert.equal(JSON.stringify(p.host.state),before);assert.deepEqual(p.host.state,p.guest.state);
 });
-test('both players must explicitly accept a rematch; lobby and kingdoms stay fixed',async()=>{
+test('both players must explicitly accept a rematch; lobby stays fixed and kingdoms swap',async()=>{
   const p=pair(2);await p.start();await finish(p);const match=p.host.state.matchId;
   let request=p.guest.rematch('request');p.drain();await request;assert.equal(p.host.state.matchId,match);assert.equal(p.host.state.rematch.accepted.length,1);
-  request=p.host.rematch('accept');p.drain();await request;assert.notEqual(p.host.state.matchId,match);assert.deepEqual(p.host.state,p.guest.state);assert.equal(p.guest.state.ply,0);assert.equal(p.host.lobby,LOBBY);assert.equal(p.host.color,2);assert.equal(p.errors.length,0);
+  request=p.host.rematch('accept');p.drain();await request;assert.notEqual(p.host.state.matchId,match);assert.deepEqual(p.host.state,p.guest.state);assert.equal(p.guest.state.ply,0);assert.equal(p.host.lobby,LOBBY);assert.equal(p.host.color,1);assert.equal(p.guest.color,2);assert.equal(p.host.state.turn,1);assert.equal(p.errors.length,0);
 });
 test('host request and guest acceptance, decline/cancel and stale offers are handled',async()=>{
   const p=pair();await p.start();await finish(p);let action=p.host.rematch('request');p.drain();await action;const stale=p.host.state.rematch.id;
@@ -59,4 +59,16 @@ test('either peer departure ends a casual game and prevents rematches',async()=>
 });
 test('closing a session removes native listeners and rejects pending commands',async()=>{
   const p=pair();await p.start();await act(p,p.host,30);const action=p.guest.act(50);const rejection=assert.rejects(action,/closed/);await p.guest.leave();await rejection;assert.equal(p.events.has(GUEST),false);
+});
+
+test('Quick Match migration forgets the abandoned lobby and accepts the lower-ID host',async()=>{
+  const p=pair();await p.host.quick();p.event(HOST,[{id:HOST,name:'Host'}]);assert.equal(p.host.lobby,LOBBY);
+  p.events.get(HOST)({type:'matchmaking',phase:'searching'});assert.equal(p.host.lobby,null);assert.equal(p.host.state,null);
+  const lower='109775240000000000';p.events.get(HOST)({type:'lobby',lobby:lower,host:GUEST,hostPresent:true,quick:true,members:[{id:GUEST},{id:HOST}]});
+  assert.equal(p.host.lobby,lower);assert.equal(p.host.isHost,false);assert.equal(p.host.peer,GUEST);assert.deepEqual(p.quickCalls,[HOST]);
+});
+
+test('an unready Quick Match guest requeues after the original owner disappears',async()=>{
+  const p=pair();await p.guest.quick();p.events.get(GUEST)({type:'lobby',lobby:LOBBY,host:HOST,hostPresent:false,quick:true,members:[{id:GUEST}]});
+  await Promise.resolve();await Promise.resolve();assert.deepEqual(p.quickCalls,[GUEST,GUEST]);assert.equal(p.guest.lobby,null);assert.equal(p.guest.expectLobby,true);
 });

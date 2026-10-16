@@ -2,24 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {CASTLE_ARTS,BOARD_ARTS,COSMETICS,earnedPulls,normalizeCosmetics,pullsAvailable,pullCosmetic,equipCosmetic,cosmeticFor,castleMarkup} from '../public/cosmetics.js';
 import {levelForXP,xpForLevel,normalizeProfile,awardMatch} from '../public/progression.js';
-test('the reward pool contains exactly 30 castles and 20 boards with distinct shipped-art paths',()=>{
-  assert.equal(CASTLE_ARTS.length,30);assert.equal(BOARD_ARTS.length,20);assert.equal(COSMETICS.length,50);assert.equal(new Set(COSMETICS.map(i=>i.id)).size,50);assert.equal(new Set(COSMETICS.map(i=>i.name)).size,50);
-  for(const [type,count,prefix]of [['castle',30,'c'],['board',20,'b']])for(let n=1;n<=count;n++){const id=prefix+String(n).padStart(2,'0'),item=cosmeticFor(id,type);assert.ok(item);assert.equal(item.image,`/assets/cosmetics/${id}.webp`);}
+test('the reward pool contains exactly 50 castles and 40 boards with distinct shipped-art paths',()=>{
+  assert.equal(CASTLE_ARTS.length,50);assert.equal(BOARD_ARTS.length,40);assert.equal(COSMETICS.length,90);assert.equal(new Set(COSMETICS.map(i=>i.id)).size,90);assert.equal(new Set(COSMETICS.map(i=>i.name)).size,90);
+  for(const [type,count,prefix]of [['castle',50,'c'],['board',40,'b']])for(let n=1;n<=count;n++){const id=prefix+String(n).padStart(2,'0'),item=cosmeticFor(id,type);assert.ok(item);assert.equal(item.image,`/assets/cosmetics/${id}.webp`);}
   assert.equal(cosmeticFor('c01','board'),null);assert.equal(cosmeticFor('classic'),null);
 });
 test('welcome and retroactive level-up pulls use the real progression thresholds',()=>{
   assert.equal(pullsAvailable({xp:0}),1);assert.equal(pullsAvailable({xp:99}),1);assert.equal(pullsAvailable({xp:100}),2);
-  for(let level=1;level<=50;level++){const xp=xpForLevel(level);assert.equal(earnedPulls(xp),levelForXP(xp));if(level>1)assert.equal(earnedPulls(xp-1),level-1);}
-  assert.equal(earnedPulls(Number.MAX_SAFE_INTEGER),50);assert.equal(earnedPulls(Infinity),1);
+  for(let level=1;level<=90;level++){const xp=xpForLevel(level);assert.equal(earnedPulls(xp),levelForXP(xp));if(level>1)assert.equal(earnedPulls(xp-1),level-1);}
+  assert.equal(earnedPulls(Number.MAX_SAFE_INTEGER),90);assert.equal(earnedPulls(Infinity),1);
 });
-test('all fifty pulls have no duplicates and a full collection cannot spend again',()=>{
-  let p={xp:xpForLevel(50),wins:4,cosmetics:{owned:[]}};const seen=new Set();
-  for(let n=0;n<50;n++){assert.equal(pullsAvailable(p),50-n);const {profile,item}=pullCosmetic(p,((n*17)%50)/50);assert.ok(item);assert.equal(seen.has(item.id),false);seen.add(item.id);assert.equal(profile.xp,p.xp);assert.equal(profile.wins,4);assert.equal(profile.cosmetics.spent,n+1);p=JSON.parse(JSON.stringify(profile));}
+test('all ninety pulls have no duplicates and a full collection cannot spend again',()=>{
+  let p={xp:xpForLevel(90),wins:4,cosmetics:{owned:[]}};const seen=new Set();
+  for(let n=0;n<90;n++){assert.equal(pullsAvailable(p),90-n);const {profile,item}=pullCosmetic(p,((n*17)%90)/90);assert.ok(item);assert.equal(seen.has(item.id),false);seen.add(item.id);assert.equal(profile.xp,p.xp);assert.equal(profile.wins,4);assert.equal(profile.cosmetics.spent,n+1);p=JSON.parse(JSON.stringify(profile));}
   assert.equal(pullsAvailable(p),0);const blocked=pullCosmetic(p,0);assert.equal(blocked.item,null);assert.equal(blocked.profile,p);
 });
 test('a pull selects uniformly from remaining items and never mutates its input',()=>{
   const p={xp:100,cosmetics:{owned:['c01'],spent:1,castle:'classic',board:'classic'}};const saved=JSON.stringify(p);
-  assert.equal(pullCosmetic(p,0).item.id,'c02');assert.equal(pullCosmetic(p,1-Number.EPSILON).item.id,'b20');assert.equal(JSON.stringify(p),saved);
+  assert.equal(pullCosmetic(p,0).item.id,'c02');assert.equal(pullCosmetic(p,1-Number.EPSILON).item.id,'b40');assert.equal(JSON.stringify(p),saved);
   for(const bad of [NaN,-.01,1,Infinity,undefined])assert.throws(()=>pullCosmetic(p,bad),RangeError);
 });
 test('corrupt saves cannot create draws, duplicate ownership, cross-type equipment or overspend',()=>{

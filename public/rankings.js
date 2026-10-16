@@ -1,4 +1,4 @@
-import { AVATARS, levelForXP } from '/progression.js';
+import { AVATARS, levelForXP,paintAvatar } from '/progression.js';
 
 const IDENTITY_KEY='little-kingdoms-commander-v1';
 let identity=null,creating=null;
@@ -48,7 +48,7 @@ export function openRankings({modal,api,getProfile,toast}){
       const result=await api('/api/leaderboard?kind='+tab+'&limit=50');if(!isCurrent(current))return;
       const entries=result.entries||[];
       root.querySelector('#rank-list').innerHTML=entries.length?`<table class="rank-table"><thead><tr><th>#</th><th>Commander</th><th>Level</th><th>W / L</th></tr></thead><tbody>${entries.map((entry,index)=>`<tr class="${entry.id===identity.id?'your-rank':''}"><td>${index+1}</td><td><div class="rank-player"><span class="portrait rank-portrait" data-rank-avatar="${entry.avatar}"></span><span>${escape(entry.displayName)}${entry.id===identity.id?'<small>YOU</small>':''}</span></div></td><td>${entry.level}</td><td>${tab==='wins'?entry.onlineWins:entry.localWins} / ${tab==='wins'?entry.onlineLosses:entry.localLosses}</td></tr>`).join('')}</tbody></table>`:'<div class="rank-empty"><span>⚑</span><h3>The first banner is yours.</h3><p>Complete an online duel with two castles each to begin the online record.</p></div>';
-      root.querySelectorAll('[data-rank-avatar]').forEach(el=>{const a=AVATARS[Number(el.dataset.rankAvatar)]||AVATARS[0];el.style.backgroundImage=`url('/assets/${a.atlas}.webp')`;el.style.backgroundPosition=`${a.index%5*25}% ${Math.floor(a.index/5)*100/3}%`;});
+      root.querySelectorAll('[data-rank-avatar]').forEach(el=>paintAvatar(el,Number(el.dataset.rankAvatar)));
     }catch(error){if(!isCurrent(current))return;root.querySelector('#rank-list').innerHTML='<p class="rank-unavailable">The hall is unavailable. Reconnect and tap Refresh.</p>';const card=root.querySelector('#commander-card');if(!card.querySelector('form'))card.innerHTML=`<strong>Your progress is saved on this device.</strong><p>Level ${levelForXP(p.xp)} · ${p.wins} wins · ${Math.max(0,p.matches-p.wins)} losses</p>`;}
   }
   load();

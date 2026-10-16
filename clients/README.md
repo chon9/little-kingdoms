@@ -4,9 +4,11 @@ The installed clients bundle the game's UI, rules engine, bot Worker, artwork an
 
 Version 2.4 includes the English / 简体中文 switch, all translation catalogs, and both language editions of the comic PDF. The header button and Settings language choice work offline, save per device, and preserve the current match. Nicknames and room codes stay unchanged. Optional Chinese character speech depends on a Chinese voice being installed on the device; normal gameplay and dialogue text do not require one.
 
-Version 2.3 bundles all 30 collectible castle sprites and 20 board surfaces. Welcome and level-up pulls, owned appearances and equipment work offline and save in the local profile. Public leaderboards need internet: device progress is unranked, and online wins/losses come from eligible server-recorded duels. Your guest commander token stays in the local profile; it is never bundled in a release. Castle equipment is shared with your next online opponent; each player sees their own board theme.
+Version 3.0 bundles all 50 collectible castle sprites and 40 board surfaces. Welcome and level-up pulls, owned appearances and equipment work offline and save in the local profile. Public leaderboards need internet: device progress is unranked, and online wins/losses come from eligible server-recorded duels. Your guest commander token stays in the local profile; it is never bundled in a release. Castle equipment is shared with your next online opponent; each player sees their own board theme.
 
 No Cloudflare account is needed to play. Online play requires internet access and the continued availability of the hosted service. Hosting accounts and any usage quotas belong to the deployment platform, not to individual players. The installed game uses device CPU/RAM for rendering and bot search; the PvP server and database run in the cloud.
+
+Version 3.0 includes 60 avatars, seven supplied Pixabay tracks, 2v2 alliances, Steam Quick Match for 1v1, and alternating team colors on rematch. Website visitors can use `/download.html` to get the pinned Windows ZIP and checksums from GitHub Releases.
 
 ## Shared client build
 

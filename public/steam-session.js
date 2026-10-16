@@ -3,11 +3,11 @@ import {newGame, play} from './engine.js';
 // No HTTP or database calls: this protocol runs exclusively over the native
 // SteamNetworkingMessages bridge. The host orders commands; both peers replay
 // the shared rules engine instead of accepting a remote board or score.
-export const STEAM_PROTOCOL=1;
+export const STEAM_PROTOCOL=2;
 const validID=value=>typeof value==='string'&&/^\d{17,20}$/.test(value);
 const token=value=>typeof value==='string'&&/^[a-zA-Z0-9-]{8,80}$/.test(value);
 const clone=value=>JSON.parse(JSON.stringify(value));
-function appearance(value={}){if(!value||typeof value!=='object')value={};return{avatar:Number.isInteger(value.avatar)&&value.avatar>=0&&value.avatar<40?value.avatar:0,castle:/^(classic|c(?:0[1-9]|[12]\d|30))$/.test(value.castle)?value.castle:'classic'};}
+function appearance(value={}){if(!value||typeof value!=='object')value={};return{avatar:Number.isInteger(value.avatar)&&value.avatar>=0&&value.avatar<60?value.avatar:0,castle:/^(classic|c(?:0[1-9]|[1-4]\d|50))$/.test(value.castle)?value.castle:'classic'};}
 function advance(state,action,color){
   if(![1,2].includes(color)||action!=='resign'&&state.turn!==color)throw new Error('Wait for your turn.');
   if(action!=='pass'&&action!=='resign'&&(!Number.isInteger(action)||action<0||action>80))throw new Error('Choose a square on the board.');
@@ -23,6 +23,8 @@ export class SteamSession {
   get isHost(){return this.host===this.identity.id;}
   get color(){return this.isHost?this.hostColor:3-this.hostColor;}
   async create(color=1){this.hostColor=color===2?2:1;this.expectLobby=true;this.check(await this.bridge.create());}
+  async quick(){this.hostColor=1;this.expectLobby=true;this.matchmaking=true;this.check(await this.bridge.quick());}
+  async requeue(){if(this.requeueing||this.closed)return;this.requeueing=true;this.error='Finding another Steam opponent…';this.update();this.lobby=null;this.host=null;this.peer=null;this.state=null;this.seq=0;this.connected=false;this.expectLobby=true;try{await this.bridge.leave();this.check(await this.bridge.quick());}catch(error){this.onError(error.message);}finally{this.requeueing=false;}}
   async join(id){if(!validID(id))throw new Error('Enter the complete numeric Steam lobby ID.');this.expectLobby=true;this.check(await this.bridge.join(id));}
   check(result){if(!result?.ok)throw new Error(result?.error||'Steam connection interrupted.');return result;}
   update(){if(this.lobby)this.onUpdate({code:this.lobby,color:this.color,version:this.seq,ready:this.ready,connected:this.connected,state:clone(this.state||newGame()),hostColor:this.hostColor,error:this.error});}
@@ -35,11 +37,13 @@ export class SteamSession {
   transmit(kind,data={}){this.send(kind,data).catch(()=>{if(!this.closed){this.error='Steam is reconnecting. Your confirmed castles are preserved.';this.connected=false;this.update();}});}
   event(event){
     if(this.closed)return;
+    if(event.type==='matchmaking'&&!this.ready){this.lobby=null;this.peer=null;this.host=null;this.state=null;this.seq=0;this.expectLobby=true;this.connected=false;return;}
     if(event.type==='error'){this.expectLobby=false;this.onError(event.error);return;}
     if(event.type==='connection'){this.connected=false;this.error='Steam is reconnecting. Your confirmed castles are preserved.';this.update();return;}
     if(event.type==='lobby'){
       if(!validID(event.lobby)||!validID(event.host)||!Array.isArray(event.members)||event.members.length>2||!event.members.some(m=>m.id===this.identity.id))return;
       if(this.lobby&&this.lobby!==event.lobby||!this.lobby&&!this.expectLobby)return;
+      if(!this.ready&&event.hostPresent===false&&(event.quick||this.matchmaking)){this.requeue();return;}
       const previousPeer=this.peer;this.lobby=event.lobby;this.host=event.host;this.members=event.members.map(m=>({id:m.id,name:String(m.name||'Steam commander').slice(0,40)}));this.peer=this.members.find(m=>m.id!==this.identity.id)?.id||null;
       if(!this.state&&this.isHost)this.freshMatch();
       if(this.ready&&(previousPeer&&!this.peer||event.hostPresent===false)){this.departed();return;}
@@ -64,15 +68,16 @@ export class SteamSession {
   }
   hello(){this.lastHello=this.now();this.transmit('hello',{profile:this.profile});}
   freshMatch(proof=null){
-    this.state={...newGame('literal'),matchId:this.uuid(),players:{[this.hostColor]:{...this.profile,displayName:this.identity.name||'Steam commander'},...(this.state?.players?.[3-this.hostColor]?{[3-this.hostColor]:this.state.players[3-this.hostColor]}:{})}};
+    const guest=this.state?.players?.[3-this.hostColor];if(proof)this.hostColor=3-this.hostColor;
+    this.state={...newGame('literal'),matchId:this.uuid(),players:{[this.hostColor]:{...this.profile,displayName:this.identity.name||'Steam commander'},...(guest?{[3-this.hostColor]:guest}:{})}};
     this.startProof=proof;this.receipts=[];
   }
   snapshot(){if(this.ready)this.transmit('snapshot',{seq:this.seq,matchId:this.state.matchId,hostColor:this.hostColor,players:this.state.players,actions:this.state.history,rematch:this.state.rematch||null,acks:this.receipts.map(r=>r.id),startProof:this.startProof});}
   acceptSnapshot(message){
     if(!Number.isSafeInteger(message.seq)||message.seq<this.seq||!token(message.matchId)||![1,2].includes(message.hostColor)||!Array.isArray(message.actions)||message.actions.length>256)return;
     const same=this.state?.matchId===message.matchId;
-    if(this.ready&&message.hostColor!==this.hostColor)throw new Error('Steam kingdoms changed unexpectedly. Leave and create a new room.');
-    if(this.ready&&!same){const proof=message.startProof;if(!this.state.winner||proof?.matchId!==this.state.matchId||!this.consents.has(proof.offerId)||!Array.isArray(proof.accepted)||proof.accepted.join(',')!=='1,2')throw new Error('A Steam rematch requires both commanders to accept.');}
+    if(this.ready&&same&&message.hostColor!==this.hostColor)throw new Error('Steam kingdoms changed unexpectedly. Leave and create a new room.');
+    if(this.ready&&!same){const proof=message.startProof;if(!this.state.winner||message.hostColor!==3-this.hostColor||proof?.matchId!==this.state.matchId||!this.consents.has(proof.offerId)||!Array.isArray(proof.accepted)||proof.accepted.join(',')!=='1,2')throw new Error('A Steam rematch requires both commanders to accept.');}
     if(same&&(message.actions.length<this.state.history.length||JSON.stringify(message.actions.slice(0,this.state.history.length))!==JSON.stringify(this.state.history)))throw new Error('Steam history mismatch. Leave and create a new room.');
     let next=newGame('literal');for(const entry of message.actions){if(!entry||typeof entry!=='object')throw new Error('Invalid Steam game message. Leave and create a new room.');next=advance(next,entry.index,entry.color);}
     const players={};for(const c of [1,2]){const p=message.players?.[c];if(!p||typeof p.displayName!=='string')return;players[c]={...appearance(p),displayName:p.displayName.slice(0,40)};}

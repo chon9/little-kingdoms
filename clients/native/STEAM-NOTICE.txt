@@ -11,7 +11,8 @@ Spacewar AppID 480 is used only for development testing. This is not an official
 Steam store release. A production Steam release requires the developer's own
 assigned AppID and compliance with the Steamworks SDK terms.
 
-Steam lobby metadata isolates Little Kingdoms protocol 1 from other AppID 480
+Friends-only 2/4-seat rooms and public 1v1 Quick Match queues are supported.
+Steam lobby metadata isolates Little Kingdoms protocol 2 from other AppID 480
 test applications. Gameplay uses reliable ISteamNetworkingMessages packets on
 channel 27109; Steam chooses the network route and may use Steam Datagram Relay.
 This build does not promise that every route is relayed or that the overlay works

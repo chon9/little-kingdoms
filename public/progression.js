@@ -4,12 +4,15 @@ const names = [
   ['Liu Shan','劉禪'],['Mi Zhu','糜竺'],['Zhou Cang','周倉'],['Guan Ping','關平'],['Ma Dai','馬岱'],['Huang Zhong','黃忠'],['Wei Yan','魏延'],['Ma Chao','馬超'],['Zhao Yun','趙雲'],['Zhuge Liang','諸葛亮'],
   ['Cao Pi','曹丕'],['Cao Hong','曹洪'],['Li Dian','李典'],['Yue Jin','樂進'],['Yu Jin','于禁'],['Xu Chu','許褚'],['Xiahou Yuan','夏侯淵'],['Xiahou Dun','夏侯惇'],['Zhang Liao','張遼'],['Cao Cao','曹操'],
   ['Guan Yu','關羽'],['Liu Bei','劉備'],['Zhang Fei','張飛'],['Jiang Wei','姜維'],['Pang Tong','龐統'],['Huang Yueying','黃月英'],['Guan Yinping','關銀屏'],['Xingcai','星彩'],['Guan Xing','關興'],['Bao Sanniang','鮑三娘'],
-  ['Sima Yi','司馬懿'],['Guo Jia','郭嘉'],['Xun Yu','荀彧'],['Zhen Ji','甄姬'],['Zhang Chunhua','張春華'],['Cao Ren','曹仁'],['Dian Wei','典韋'],['Jia Xu','賈詡'],['Sima Zhao','司馬昭'],['Wang Yi','王異']
+  ['Sima Yi','司馬懿'],['Guo Jia','郭嘉'],['Xun Yu','荀彧'],['Zhen Ji','甄姬'],['Zhang Chunhua','張春華'],['Cao Ren','曹仁'],['Dian Wei','典韋'],['Jia Xu','賈詡'],['Sima Zhao','司馬昭'],['Wang Yi','王異'],
+  ['Sun Shangxiang','孙尚香'],['Da Qiao','大乔'],['Xiao Qiao','小乔'],['Diao Chan','貂蝉'],['Cai Wenji','蔡文姬'],['Sun Luban','孙鲁班'],['Sun Luyu','孙鲁育'],['Lady Wu','吴国太'],['Ma Yunlu','马云禄'],['Lu Lingqi','吕玲绮'],['Huang Wudie','黄舞蝶'],['Lady Mi','糜夫人'],['Sun Quan','孙权'],['Sun Ce','孙策'],['Zhou Yu','周瑜'],['Lu Xun','陆逊'],['Lu Meng','吕蒙'],['Gan Ning','甘宁'],['Taishi Ci','太史慈'],['Lu Su','鲁肃']
 ];
-export const AVATARS = names.map(([name,han],id)=>({id,name,han,color:id<10||id>=20&&id<30?1:2,atlas:id<20?'generals':'generals-unlock',index:id%20,unlock:id<20?id%10+1:id-18}));
+export const MAX_LEVEL=90;
+export const AVATARS = names.map(([name,han],id)=>({id,name,han,color:id<10||id>=20&&id<30?1:2,atlas:id<20?'generals':'generals-unlock',index:id%20,unlock:id<20?id%10+1:id-18,...(id>=40?{image:'/assets/avatars/a'+id+'.webp'}:{})}));
+export function paintAvatar(element,id){const a=AVATARS[id]||AVATARS[0];element.style.backgroundImage=`url('${a.image||'/assets/'+a.atlas+'.webp'}')`;element.style.backgroundSize=a.image?'cover':'';element.style.backgroundPosition=a.image?'center':`${a.index%5*25}% ${Math.floor(a.index/5)*100/3}%`;element.setAttribute('aria-label',a.name);}
 export const PROFILE_KEY='little-kingdoms-profile-v1';
 export const xpForLevel=level=>80*(level-1)+20*(level-1)**2;
-export function levelForXP(xp){let level=1;while(level<50&&xp>=xpForLevel(level+1))level++;return level;}
+export function levelForXP(xp){let level=1;while(level<MAX_LEVEL&&xp>=xpForLevel(level+1))level++;return level;}
 export function freshProfile(){return{schema:1,xp:0,avatar:0,matches:0,wins:0,claimed:[],defeated:[],cosmetics:normalizeCosmetics(null,0)};}
 export function normalizeProfile(value){
   const p=freshProfile();if(value?.schema!==1)return p;
@@ -21,11 +24,12 @@ export function normalizeProfile(value){
   p.cosmetics=normalizeCosmetics(value.cosmetics,p.xp);
   return p;
 }
-export function awardMatch(profile,{state,mode,humanColor,botLevel=1}){
+export function awardMatch(profile,{state,mode,humanColor,humanSeat,botLevel=1}){
   const p=normalizeProfile(profile),id=state.matchId;
   if(!state.winner||typeof id!=='string'||!id||p.claimed.includes(id))return{profile:p,xp:0,duplicate:true,unlocked:[]};
-  const played=state.count[1]+state.count[2],own=state.count[humanColor],won=state.winner===humanColor;
-  const completed=played>=4&&own>=2,eligible=completed&&!(state.reason==='resignation'&&!won);
+  const played=state.count[1]+state.count[2],own=state.mode==='teams'?state.seatCounts?.[humanSeat]||0:state.count[humanColor],won=state.winner===humanColor;
+  const resigned=state.mode==='teams'?state.resignedSeat===humanSeat:!won;
+  const completed=played>=4&&own>=2,eligible=completed&&!(state.reason==='resignation'&&resigned);
   let xp=eligible?(mode==='online'?(won?150:60):mode==='local'?40:won?60+12*botLevel:25+4*botLevel):0;
   let firstVictory=false;
   if(eligible&&mode==='bot'&&won&&!p.defeated.includes(botLevel)){xp+=40+5*botLevel;p.defeated.push(botLevel);firstVictory=true;}

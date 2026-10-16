@@ -10,6 +10,7 @@ try{await access(destination);throw new Error('Export already exists; choose a n
 const topFiles=new Set(['README.md','package.json','package-lock.json','.gitignore','drizzle.config.js']);
 const roots=new Set(['public','shared','server','worker','db','drizzle','scripts','tests','artwork','clients']);
 const paths=[...new Set(execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{encoding:'utf8',windowsHide:true}).split('\0').filter(Boolean))];
+const deleted=new Set(execFileSync('git',['ls-files','--deleted','-z'],{encoding:'utf8',windowsHide:true}).split('\0').filter(Boolean));
 let count=0,metadataRemoved=0;
 function stripPNGMetadata(bytes){
   if(bytes.length<8||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')return bytes;
@@ -18,6 +19,7 @@ function stripPNGMetadata(bytes){
   return Buffer.concat(chunks);
 }
 for(const relative of paths){
+  if(deleted.has(relative))continue;
   const parts=relative.split('/'),base=parts.at(-1);
   if(!(topFiles.has(relative)||roots.has(parts[0])))continue;
   if(parts.some(p=>['.git','.openai','.agents','.codex','node_modules','.gradle','build','data','generated','dist','www','releases'].includes(p)))continue;
