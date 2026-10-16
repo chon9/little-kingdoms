@@ -80,6 +80,10 @@ try{
     const seen=await api('/api/rooms/'+code,null,guest.token);assert.equal(seen.state.board[30],1);
     await api('/api/rooms/'+code+'/move',{action:50,version:seen.version},guest.token);await until('document.querySelectorAll(".cell.orange").length===1');
     await click('#resign');await click('#confirm-resign');await until('document.querySelector("#modal-content").textContent.includes("Wei rules")');
+    assert.equal(await evaluate('(()=>{const b=document.querySelector("#play-again").getBoundingClientRect();return b.top>=0&&b.bottom<=innerHeight;})()'),true,'next-duel action is visible without scrolling');
+    await click('#modal-close');assert.equal(await evaluate('document.querySelector("#deploy").disabled'),false,'finished native board still offers a new duel');
+    await click('#undo');await until('document.querySelector("#play-again")!==null');await click('#play-again');
+    assert.equal(await evaluate('document.body.dataset.screen'),'lobby');assert.equal(await evaluate('document.querySelector("#create-room").hidden'),false,'native online replay opens fresh room setup');
   }
   assert.deepEqual(errors,[],'native renderer has no uncaught errors');
   console.log('Windows client checks passed: '+(lite?'WebView2 local virtual origin, native fullscreen button/F11/Alt+Enter/Escape, window bounds restoration, 40 avatars, offline music':'bundled app protocol')+', isolated renderer, offline launch, local bot, undo, level-10 defensive regression'+(process.argv.includes('--online')?', hosted cross-client PvP with bidirectional moves and shared avatars':'')+'.');

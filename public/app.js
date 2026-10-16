@@ -121,7 +121,7 @@ function renderSetup() {
   $('difficulty').disabled=pending;
   for(const c of [1,2]) {const b=$(c===1?'choose-shu':'choose-wei');b.classList.toggle('selected',config.humanColor===c);b.setAttribute('aria-pressed',String(config.humanColor===c));}
   $('begin').hidden=config.mode==='online'; $('begin').innerHTML=(started?'New battle':'To battle')+' <svg><use href="#swords"/></svg>';
-  $('resume').hidden=!started||config.mode==='online';
+  $('resume').hidden=!started||config.mode==='online';$('resume').textContent=state.winner?'Return to finished battle →':'Resume current battle →';
   $('setup-note').textContent=config.mode==='online'?'A private room. A worthy rival.':'40 castles. One capture. A kingdom to win.';
   document.querySelectorAll('.level-node').forEach(b=>{b.classList.toggle('current',Number(b.dataset.level)===config.level);b.setAttribute('aria-pressed',String(Number(b.dataset.level)===config.level));b.disabled=pending;});
   $('room-details').hidden=!room; $('join-form').hidden=!!room; $('create-room').hidden=!!room; document.querySelector('.or-line').hidden=!!room;
@@ -174,8 +174,11 @@ function render(pop = false) {
   $('turn-title').textContent=title;$('turn-subtitle').textContent=subtitle;
   $('status-orb').classList.toggle('thinking',thinking);$('status-orb').style.background=state.winner?'#9aaa74':state.turn===1?'#6193a0':'#c98a58';
   $('move-counter').textContent='TURN '+String(state.ply).padStart(2,'0');
-  $('deploy').disabled=started?(!ownTurn()||selected===null):config.mode==='online';$('deploy').innerHTML=!started?'To battle <span>↗</span>':selected===null?'Tap a square <span>＋</span>':`Deploy ${positionName(selected)} <span>＋</span>`;
-  $('pass').disabled=!ownTurn();$('undo').disabled=!started||!snapshots.length||state.winner||config.mode==='online'||pending;
+  const ended=started&&!!state.winner;
+  $('deploy').disabled=pending||(!ended&&(started?(!ownTurn()||selected===null):config.mode==='online'));$('deploy').innerHTML=ended?(config.mode==='online'?'New duel <span>↗</span>':'Play again <span>↻</span>'):!started?'To battle <span>↗</span>':selected===null?'Tap a square <span>＋</span>':`Deploy ${positionName(selected)} <span>＋</span>`;
+  $('pass').disabled=ended?pending:!ownTurn();$('pass').innerHTML=ended?'Lobby<span>→</span>':'Pass<span>→</span>';
+  $('undo').disabled=ended?pending:!started||!snapshots.length||config.mode==='online'||pending;$('undo').innerHTML=ended?'Results':'<span>↶</span>Undo';
+  $('battle-restart').hidden=!started||(config.mode==='online'&&!ended);$('battle-restart').disabled=pending;$('battle-restart').textContent=ended?(config.mode==='online'?'New duel ↗':'Play again ↻'):'Restart ↻';
   $('resign').disabled=!started||!!state.winner||pending||(config.mode==='online'&&!room?.ready);
 }
 
@@ -240,9 +243,22 @@ function queueBot() {
 }
 
 function startBattle() {
-  stopBot();resetEmotion();state={...newGame('literal'),matchId:crypto.randomUUID(),players:{[config.humanColor]:{avatar:profile.avatar}}};snapshots=[];selected=null;started=true;screen='battle';persist();render();playerCutin(config.humanColor,'start',true);queueBot();
+  stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;cutinCooldown=0;state={...newGame('literal'),matchId:crypto.randomUUID(),players:{[config.humanColor]:{avatar:profile.avatar}}};snapshots=[];selected=null;searchInfo=null;started=true;screen='battle';persist();render();playerCutin(config.humanColor,'start',true);queueBot();
 }
-function modal(html) {$('modal-content').innerHTML=html;if(!$('modal').open)$('modal').showModal();}
+function modal(html) {$('modal-content').innerHTML=html;$('modal').scrollTop=0;if(!$('modal').open)$('modal').showModal();}
+function replayBattle() {
+  if(pending)return;
+  if(config.mode==='online') {
+    if(!state.winner)return;
+    $('modal').close();stopRoom();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;
+    state=newGame();started=false;selected=null;snapshots=[];screen='lobby';render();
+    toast('Create a new room and share its invitation, or join your friend’s new room.');return;
+  }
+  const restart=()=>{$('modal').close();startBattle();};
+  if(!started||state.winner||!state.ply){restart();return;}
+  modal('<p class="eyebrow">A FRESH BATTLEFIELD</p><h2>Restart this match?</h2><p>Start again with the same general, difficulty and kingdom. This unfinished match gives no XP.</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-restart">Keep playing</button><button class="primary-btn" id="confirm-restart">Restart ↻</button></div>');
+  $('cancel-restart').onclick=()=>$('modal').close();$('confirm-restart').onclick=restart;
+}
 function confirmChange(callback, title='A new chapter?') {
   if(!started||state.winner||(!state.ply&&config.mode!=='online')) {callback();return;}
   modal(`<p class="eyebrow">LEAVE THIS BATTLE</p><h2>${title}</h2><p>Your current battle will end on this device.${config.mode==='online'?' Your rival can still view the room.':''}</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-change">Keep playing</button><button class="primary-btn" id="confirm-change">Continue →</button></div>`);
@@ -275,9 +291,9 @@ function showResult() {
   const s=scoredWinner(state),win=state.winner;
   if(config.mode==='bot'&&win===config.humanColor){emotion='sad';clearTimeout(emotionTimer);emotionTimer=setTimeout(()=>{emotion='';render();},6000);render();}
   const reason=state.reason==='capture'?'An enemy group has no liberties. One capture, one kingdom.':state.reason==='simultaneous'?'Both sides lost their final liberties. The simultaneous capture rule awards the battle to Wei.':state.reason==='resignation'?'The opposing commander has laid down their banner.':'The final territories are sealed. The land has spoken.';
-  modal(`<div class="result-view"><div id="result-portrait" class="portrait"></div><p class="eyebrow">THE BATTLE IS WON</p><h2>${colorName(win)} rules the riverlands.</h2><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}<button class="primary-btn" id="play-again">${config.mode==='online'?'Back to the battlefield':'Another little rivalry ↗'}</button><button class="resume-btn" id="result-collection">View avatar collection →</button></div>`);
+  modal(`<div class="result-view"><div class="result-heading"><div id="result-portrait" class="portrait"></div><div><p class="eyebrow">${config.mode==='local'?'BATTLE COMPLETE':win===config.humanColor?'VICTORY':'ANOTHER BATTLE AWAITS'}</p><h2>${colorName(win)} rules the riverlands.</h2></div></div><div class="result-body" tabindex="0" aria-label="Battle results and rewards"><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}${config.mode==='online'?'<p>For another duel, create a new room and invite your friend again.</p>':''}<button class="resume-btn" id="result-collection">View avatar collection →</button></div><div class="result-actions"><button class="primary-btn" id="play-again">${config.mode==='online'?'New online duel ↗':'Play again ↻'}</button><button class="secondary-btn" id="result-lobby">Battle lobby →</button></div></div>`);
   if(config.mode==='bot'&&win!==config.humanColor)portrait($('result-portrait'),win,config.level);else avatarPortrait($('result-portrait'),avatarFor(win));
-  $('result-collection').onclick=showGenerals;$('play-again').onclick=()=>{$('modal').close();if(config.mode!=='online')startBattle();};
+  $('result-collection').onclick=showGenerals;$('play-again').onclick=replayBattle;$('result-lobby').onclick=()=>{$('modal').close();screen='lobby';render();};$('play-again').focus({preventScroll:true});
 }
 
 async function api(path,body,token) {
@@ -313,8 +329,9 @@ $('difficulty').addEventListener('change',()=>{const l=Number($('difficulty').va
 for(const [id,c]of[['choose-shu',1],['choose-wei',2]])$(id).onclick=()=>{if(config.humanColor===c)return;confirmChange(()=>{stopBot();resetEmotion();config.humanColor=c;state=newGame();started=false;screen='lobby';snapshots=[];persist();render();});};
 for(const m of['bot','local','online'])$('mode-'+m).onclick=()=>switchMode(m);
 $('begin').onclick=()=>confirmChange(startBattle);
-$('deploy').onclick=()=>{if(!started){startBattle();return;}if(selected!==null)act(selected);};$('pass').onclick=()=>act('pass');
+$('deploy').onclick=()=>{if(state.winner){replayBattle();return;}if(!started){startBattle();return;}if(selected!==null)act(selected);};$('pass').onclick=()=>{if(state.winner){screen='lobby';render();}else act('pass');};$('battle-restart').onclick=replayBattle;
 $('undo').onclick=()=>{
+  if(state.winner){showResult();return;}
   if(!snapshots.length||config.mode==='online'||state.winner)return;
   stopBot();resetEmotion();state=snapshots.pop();
   if(config.mode==='bot'&&state.turn!==config.humanColor&&snapshots.length)state=snapshots.pop();
