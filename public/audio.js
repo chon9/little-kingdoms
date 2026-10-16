@@ -9,6 +9,7 @@ for(const key of ['music','effects'])if(Number.isFinite(saved?.[key]))audioSetti
 for(const key of ['cutins','voice','muted'])if(typeof saved?.[key]==='boolean')audioSettings[key]=saved[key];
 if(MUSIC_TRACKS.some(t=>t.id===saved?.track))audioSettings.track=saved.track;
 if(MUSIC_MODES.includes(saved?.musicMode))audioSettings.musicMode=saved.musicMode;
+if(saved?.track&&!MUSIC_TRACKS.some(t=>t.id===saved.track))try{localStorage.setItem(KEY,JSON.stringify(audioSettings));}catch{}
 const queue=new MusicQueue(audioSettings.track,audioSettings.musicMode);
 const music=new Audio(MUSIC_TRACKS.find(t=>t.id===audioSettings.track).file);music.loop=audioSettings.musicMode==='repeat';music.preload='none';music.volume=audioSettings.music;
 music.id='game-music';music.hidden=true;document.body.append(music);

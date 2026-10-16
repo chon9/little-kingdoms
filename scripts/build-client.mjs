@@ -1,6 +1,26 @@
-import { cp,mkdir,copyFile,writeFile,readFile } from 'node:fs/promises';
+import { cp,mkdir,copyFile,writeFile,readFile,readdir,unlink } from 'node:fs/promises';
+import path from 'node:path';
 const directory='clients/www';
-await mkdir(directory,{recursive:true});await cp('public',directory,{recursive:true});
+// Mirror the shipped assets so removed soundtracks cannot survive a rebuild.
+const outputRoot=path.resolve(directory),sourceRoot=path.resolve('public'),expected=new Set(['engine.js','ai.js']);
+async function collect(dir,relative=''){
+  for(const entry of await readdir(dir,{withFileTypes:true})){
+    if(entry.isSymbolicLink())throw new Error('Client asset symlinks require review.');
+    const key=path.join(relative,entry.name);
+    if(entry.isDirectory())await collect(path.join(dir,entry.name),key);else expected.add(key);
+  }
+}
+async function prune(dir,relative=''){
+  for(const entry of await readdir(dir,{withFileTypes:true})){
+    if(entry.isSymbolicLink())throw new Error('Client output symlinks require review.');
+    const key=path.join(relative,entry.name),file=path.resolve(outputRoot,key);
+    if(!file.startsWith(outputRoot+path.sep))throw new Error('Unsafe client output path.');
+    if(entry.isDirectory())await prune(file,key);else if(!expected.has(key))await unlink(file);
+  }
+}
+await collect(sourceRoot);
+await mkdir(directory,{recursive:true});await prune(outputRoot);
+await cp('public',directory,{recursive:true});
 for(const name of ['engine','ai'])await copyFile(`shared/${name}.js`,`${directory}/${name}.js`);
 const origin='https://shu-wei-kingdoms.alexchon911.chatgpt.site';
 await writeFile(directory+'/client-config.js','window.KINGDOMS_API_BASE = '+JSON.stringify(origin)+';\n');

@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {MUSIC_TRACKS,MusicQueue} from '../public/music-library.js';
 import {setLanguage,tr} from '../public/i18n.js';
 
-test('rotation visits all four tracks, wraps, and repeat changes only on manual next',()=>{
+test('rotation visits the complete catalog, wraps, and repeat changes only on manual next',()=>{
   const ids=MUSIC_TRACKS.map(t=>t.id),queue=new MusicQueue();
   assert.deepEqual([queue.track,...Array.from({length:ids.length-1},()=>queue.next())],ids);
   assert.equal(queue.next(),ids[0]);queue.configure(ids[1],'repeat');
@@ -13,11 +13,11 @@ test('rotation visits all four tracks, wraps, and repeat changes only on manual 
 test('shuffle covers each cycle and does not repeat at a cycle boundary',()=>{
   for(const seed of [0,.2,.5,.99]){
     const queue=new MusicQueue(MUSIC_TRACKS[0].id,'shuffle',()=>seed);
-    const first=[queue.track,...Array.from({length:3},()=>queue.next())];
-    assert.equal(new Set(first).size,4);
+    const first=[queue.track,...Array.from({length:MUSIC_TRACKS.length-1},()=>queue.next())];
+    assert.equal(new Set(first).size,MUSIC_TRACKS.length);
     let last=first.at(-1);
     for(let cycle=0;cycle<10;cycle++){
-      const next=Array.from({length:4},()=>queue.next());assert.equal(new Set(next).size,4);
+      const next=Array.from({length:MUSIC_TRACKS.length},()=>queue.next());assert.equal(new Set(next).size,MUSIC_TRACKS.length);
       assert.notEqual(next[0],last);last=next.at(-1);
     }
   }
@@ -38,5 +38,18 @@ test('every bundled soundtrack has a local MP3, a primary source credit, and a C
     assert.ok(sw.includes(track.file),'precache '+track.id);assert.ok(credits.includes(track.source));assert.ok(credits.includes(track.author));
     assert.match(tr(track.title),/[\u3400-\u9fff]/);
   }
-  assert.ok(credits.includes('https://creativecommons.org/publicdomain/zero/1.0/'));setLanguage('en');
+  assert.ok(credits.includes('https://creativecommons.org/licenses/by/4.0/'));setLanguage('en');
 });
+test('only ten Gregor Quendel recordings remain and every track carries CC BY attribution',async()=>{
+  const gregor=MUSIC_TRACKS.filter(t=>t.author==='Gregor Quendel'),credits=await readFile('public/assets/music-credits.txt','utf8');
+  assert.equal(gregor.length,10);assert.equal(MUSIC_TRACKS.length,10);
+  assert.equal(MUSIC_TRACKS.filter(t=>t.license==='CC0 1.0').length,0);
+  for(const track of gregor){
+    assert.equal(track.license,'CC BY 4.0');assert.equal(track.licenseUrl,'https://creativecommons.org/licenses/by/4.0/');
+    assert.equal(track.source,'https://opengameart.org/content/free-cinematic-trailer-music');
+    assert.ok(credits.includes(track.originalTitle));assert.ok(credits.includes(track.file));
+  }
+  assert.ok(credits.includes('Changes for Little Kingdoms:'));assert.ok(credits.includes('These recordings are NOT CC0.'));
+});
+
+test('retired soundtrack files are absent from both the shipped game and its offline cache',async()=>{const sw=await readFile('public/sw.js','utf8');for(const id of ['war-theme','creed-of-course','enemy-ship','asianoriental2']){assert.ok(!MUSIC_TRACKS.some(t=>t.id===id));assert.ok(!sw.includes('/assets/'+id+'.mp3'));await assert.rejects(readFile('public/assets/'+id+'.mp3'),{code:'ENOENT'});}});

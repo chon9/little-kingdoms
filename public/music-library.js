@@ -1,9 +1,125 @@
 export const MUSIC_TRACKS=Object.freeze([
-  {id:'war-theme',title:'War Theme',author:'Spring Spring',file:'/assets/war-theme.mp3',source:'https://opengameart.org/content/war-theme',duration:283.744},
-  {id:'creed-of-course',title:'Creed of Course',author:'Eldritch Grim',file:'/assets/creed-of-course.mp3',source:'https://opengameart.org/content/creed-of-course-0',duration:96.449},
-  {id:'enemy-ship',title:'Enemy Ship Approaching',author:'yd',file:'/assets/enemy-ship.mp3',source:'https://opengameart.org/content/enemy-ship-approaching',duration:41.659},
-  {id:'asianoriental2',title:'Asianoriental2',author:'Tozan',file:'/assets/asianoriental2.mp3',source:'https://opengameart.org/content/asianoriental2',duration:192.477},
-]);
+  {
+    "id": "gq-02",
+    "title": "Orchestral Action",
+    "originalTitle": "02 - Cinematic Orchestral Action Trailer",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-02.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 64.835918,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-04",
+    "title": "Action Percussion",
+    "originalTitle": "04 - Cinematic Action Percussion Trailer",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-04.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 78.027755,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-01",
+    "title": "Cinematic Oriental I",
+    "originalTitle": "01 - Cinematic Oriental Trailer - I",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-01.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 39.026939,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-12",
+    "title": "Cinematic Oriental II",
+    "originalTitle": "12 - Cinematic Oriental Trailer - II",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-12.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 57.051429,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-05",
+    "title": "Modern Orchestra",
+    "originalTitle": "05 - Cinematic Modern Orchestral Trailer",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-05.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 60.969796,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-06",
+    "title": "Cello Arpeggio",
+    "originalTitle": "06 - Cinematic Cello Arpeggio Trailer",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-06.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 68.04898,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-07",
+    "title": "Orchestral Percussion",
+    "originalTitle": "07 - Cinematic Minimal Orchestral Percussion Trailer",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-07.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 81.048,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-08",
+    "title": "Chanting Percussion",
+    "originalTitle": "08 - Cinematic Chanting Throat Singing Percussion Trailer",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-08.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 40.045714,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-03",
+    "title": "Cinematic Piano",
+    "originalTitle": "03 - Cinematic Piano Trailer",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-03.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 44.042449,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "gq-11",
+    "title": "Fairy Tale",
+    "originalTitle": "11 - Cinematic Fairy Tale Trailer",
+    "author": "Gregor Quendel",
+    "authorUrl": "https://www.gregorquendel.com",
+    "file": "/assets/music/gq-11.mp3",
+    "source": "https://opengameart.org/content/free-cinematic-trailer-music",
+    "duration": 34.037551,
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+  }
+].map(track=>Object.freeze(track)));
 export const MUSIC_MODES=Object.freeze(['rotation','shuffle','repeat']);
 
 // A shuffle bag visits every track once before starting another cycle.

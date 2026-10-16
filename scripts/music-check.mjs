@@ -35,63 +35,66 @@ async function page(width=1440,height=1080){
   return{send,evaluate,until,click,navigate,screenshot,errors};
 }
 try{
-  const p=await page(390,844);await p.navigate();await p.evaluate('localStorage.clear();sessionStorage.clear()');await p.navigate();
+  const p=await page(390,844);await p.navigate();await p.evaluate('localStorage.clear();sessionStorage.clear();localStorage.setItem("little-kingdoms-audio-v1",JSON.stringify({music:.35,effects:.55,cutins:true,voice:false,muted:false,track:"war-theme",musicMode:"repeat"}))');await p.navigate();
   await p.click('#begin');const match=await p.evaluate('localStorage.getItem("little-kingdoms-save")');
   await p.click('#settings-nav');
-  assert.equal(await p.evaluate('document.querySelectorAll("#music-track option").length'),4);
-  assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'war-theme');
+  assert.equal(await p.evaluate('document.querySelectorAll("#music-track option").length'),10);
+  assert.equal(await p.evaluate('JSON.parse(localStorage.getItem("little-kingdoms-audio-v1")).track'),'gq-02','retired music selection migrates to Gregor');
+  assert.equal(await p.evaluate('JSON.parse(localStorage.getItem("little-kingdoms-audio-v1")).musicMode'),'repeat','migration preserves playback mode');
+  assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'gq-02');
   const select=async(id,value)=>p.evaluate(`(()=>{const e=document.getElementById(${JSON.stringify(id)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('change',{bubbles:true}));})()`);
   const tracks=await p.evaluate(`import('/music-library.js').then(m=>m.MUSIC_TRACKS)`);
   for(const track of tracks){
     await select('music-track',track.id);
     await p.until(`document.querySelector('#game-music').currentSrc.endsWith(${JSON.stringify(track.file)})&&document.querySelector('#game-music').currentTime>.1`);
     const duration=await p.evaluate('document.querySelector("#game-music").duration');assert.ok(Math.abs(duration-track.duration)<.2,'complete decodable recording '+track.id);
-    assert.equal(await p.evaluate('document.querySelector("#music-source").href'),track.source);
+    assert.equal(await p.evaluate('document.querySelector("#music-source").href'),track.source);assert.equal(await p.evaluate('document.querySelector("#music-license").textContent'),track.license);assert.equal(await p.evaluate('document.querySelector("#music-license").href'),track.licenseUrl);
   }
-  await select('music-track','enemy-ship');await select('music-mode','rotation');
+  await select('music-track','gq-11');await select('music-mode','rotation');await p.until('document.querySelector("#game-music").currentSrc.endsWith("/assets/music/gq-11.mp3")&&document.querySelector("#game-music").currentTime>.1');await p.evaluate('document.querySelector("#game-music").playbackRate=16');await p.until('document.querySelector("#music-track").value==="gq-02"');await p.until('document.querySelector("#game-music").currentTime>.1');await p.evaluate('document.querySelector("#game-music").playbackRate=1');
+  await select('music-track','gq-11');await select('music-mode','rotation');
   // Accelerated real playback reaches the end without relying on HTTP seeking.
-  await p.until('document.querySelector("#game-music").currentSrc.endsWith("/assets/enemy-ship.mp3")&&document.querySelector("#game-music").currentTime>.1');
+  await p.until('document.querySelector("#game-music").currentSrc.endsWith("/assets/music/gq-11.mp3")&&document.querySelector("#game-music").currentTime>.1');
   await p.evaluate('document.querySelector("#game-music").playbackRate=16');
-  await p.until('document.querySelector("#music-track").value==="asianoriental2"');
+  await p.until('document.querySelector("#music-track").value==="gq-02"');
   await p.until('document.querySelector("#game-music").currentTime>.1');
   await p.evaluate('document.querySelector("#game-music").playbackRate=1');
-  await select('music-track','enemy-ship');await select('music-mode','repeat');assert.equal(await p.evaluate('document.querySelector("#game-music").loop'),true);
-  await p.until('document.querySelector("#game-music").currentSrc.endsWith("/assets/enemy-ship.mp3")&&document.querySelector("#game-music").currentTime>.1');
+  await select('music-track','gq-11');await select('music-mode','repeat');assert.equal(await p.evaluate('document.querySelector("#game-music").loop'),true);
+  await p.until('document.querySelector("#game-music").currentSrc.endsWith("/assets/music/gq-11.mp3")&&document.querySelector("#game-music").currentTime>.1');
   await p.evaluate('document.querySelector("#game-music").playbackRate=16');
-  await p.until('document.querySelector("#game-music").currentTime>35');await p.until('document.querySelector("#game-music").currentTime<10');
-  assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'enemy-ship');
+  await p.until('document.querySelector("#game-music").currentTime>28');await p.until('document.querySelector("#game-music").currentTime<10');
+  assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'gq-11');
   await p.evaluate('document.querySelector("#game-music").playbackRate=1');
-  await p.click('#music-next');assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'asianoriental2');
+  await p.click('#music-next');assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'gq-02');
   await select('music-mode','shuffle');const heard=[await p.evaluate('document.querySelector("#music-track").value')];
-  for(let i=0;i<3;i++){await p.click('#music-next');heard.push(await p.evaluate('document.querySelector("#music-track").value'));}
-  assert.equal(new Set(heard).size,4,'shuffle has no duplicate within a cycle');
-  await select('music-track','creed-of-course');await select('music-mode','repeat');
+  for(let i=0;i<tracks.length-1;i++){await p.click('#music-next');heard.push(await p.evaluate('document.querySelector("#music-track").value'));}
+  assert.equal(new Set(heard).size,tracks.length,'shuffle has no duplicate within a cycle');
+  await select('music-track','gq-03');await select('music-mode','repeat');
   await p.evaluate('document.querySelector("#music-volume").value=24;document.querySelector("#music-volume").dispatchEvent(new Event("input"))');
   await p.click('#setting-sound');assert.equal(await p.evaluate('document.querySelector("#game-music").paused'),true);await p.click('#setting-sound');
   await p.until('!document.querySelector("#game-music").paused');
-  await select('language-select','zh-Hans');await p.until('document.documentElement.lang==="zh-Hans"');
-  assert.equal(await p.evaluate('document.querySelector("#music-now-playing").textContent'),'出征之誓');
-  assert.equal(await p.evaluate('document.querySelector("#music-author").textContent'),'Eldritch Grim');
+  await select('music-track','gq-04');await select('language-select','zh-Hans');await p.until('document.documentElement.lang==="zh-Hans"');
+  assert.equal(await p.evaluate('document.querySelector("#music-now-playing").textContent'),'战鼓冲阵');
+  assert.equal(await p.evaluate('document.querySelector("#music-author").textContent'),'Gregor Quendel');
   for(const [w,h]of [[320,568],[390,844],[844,390],[1366,768]]){
     await p.send('Emulation.setDeviceMetricsOverride',{width:w,height:h,deviceScaleFactor:1,mobile:w<720});
     await p.click('#music-next');await p.click('#music-track');await p.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await p.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
     assert.equal(await p.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
     await p.screenshot('music-zh-'+w);
   }
-  await select('music-track','creed-of-course');
+  await select('music-track','gq-02');
   assert.equal(await p.evaluate('localStorage.getItem("little-kingdoms-save")'),match,'music preferences preserve the saved match');
-  await p.until(`(async()=>{await navigator.serviceWorker.ready;const cache=await caches.open('little-kingdoms-v2.5.1');return (await Promise.all(${JSON.stringify(tracks.map(t=>t.file))}.map(f=>cache.match(f)))).every(Boolean);})()`,20000);
+  await p.until(`(async()=>{await navigator.serviceWorker.ready;const cache=await caches.open('little-kingdoms-v2.6.1');return (await Promise.all(${JSON.stringify(tracks.map(t=>t.file))}.map(f=>cache.match(f)))).every(Boolean);})()`,20000);
   await p.send('Network.enable');await p.send('Network.clearBrowserCache');await p.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await p.navigate();await p.click('#settings-nav');
-  assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'creed-of-course');
+  assert.equal(await p.evaluate('document.querySelector("#music-track").value'),'gq-02');
   assert.equal(await p.evaluate('document.querySelector("#music-mode").value'),'repeat');
   assert.equal(await p.evaluate('document.querySelector("#game-music").volume'),.24);
   assert.equal(await p.evaluate('document.documentElement.lang'),'zh-Hans');
   for(const track of tracks){await select('music-track',track.id);await p.until(`document.querySelector('#game-music').currentSrc.endsWith(${JSON.stringify(track.file)})&&document.querySelector('#game-music').currentTime>.1`);}
-  await select('music-track','enemy-ship');await select('music-mode','rotation');await p.until('document.querySelector("#game-music").currentSrc.endsWith("/assets/enemy-ship.mp3")&&document.querySelector("#game-music").currentTime>.1');
+  await select('music-track','gq-11');await select('music-mode','rotation');await p.until('document.querySelector("#game-music").currentSrc.endsWith("/assets/music/gq-11.mp3")&&document.querySelector("#game-music").currentTime>.1');
   await p.evaluate('document.querySelector("#game-music").playbackRate=16');
-  await p.until('document.querySelector("#music-track").value==="asianoriental2"');await p.until('document.querySelector("#game-music").currentTime>.1');
+  await p.until('document.querySelector("#music-track").value==="gq-02"');await p.until('document.querySelector("#game-music").currentTime>.1');
   assert.deepEqual(p.errors,[]);
-  console.log('Music checks passed: all four full recordings decode/play online and cold-offline, actual media-ended rotation and repeat, shuffle, next, mute, persisted track/mode/volume, Chinese controls, reachable 320px/landscape/PC layouts, and saved-match preservation.');
+  console.log('Music checks passed: all ten Gregor Quendel full recordings with accurate per-track licenses decode/play online and cold-offline, actual media-ended rotation and repeat, shuffle, next, mute, persisted track/mode/volume, Chinese controls, reachable 320px/landscape/PC layouts, and saved-match preservation.');
 }finally{for(const s of sockets)s.close();edge.kill();}
 
