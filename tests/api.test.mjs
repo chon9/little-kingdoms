@@ -98,3 +98,20 @@ test('finished ranked results must save successfully before a rematch replaces t
 test('waiting and ongoing rooms cannot be reset by rematch requests',async()=>{
  const store=memoryStore(),host=await call(store,'/api/rooms',{hostColor:2,level:1}),path=`/api/rooms/${host.code}`;assert.equal((await offerRematch(store,path,host.state,0,host.token)).status,409);const guest=await call(store,path+'/join',{});assert.equal((await offerRematch(store,path,guest.state,guest.version,host.token)).status,409);assert.equal((await call(store,path,null,guest.token)).state.ply,0);
 });
+
+test('retrying a move after a lost acknowledgement applies it exactly once',async()=>{
+ const store=memoryStore(),{host,guest}=await pair(store),path=`/api/rooms/${host.code}`,body={action:0,version:guest.version,matchId:guest.state.matchId,moveId:crypto.randomUUID()};
+ const first=await call(store,path+'/move',body,host.token);assert.equal(first.status,200);assert.equal(first.acknowledgedMove,body.moveId);const peer=await call(store,path+'/move',{action:50,version:first.version},guest.token);const retry=await call(store,path+'/move',body,host.token);assert.equal(retry.status,200);assert.equal(retry.version,peer.version);assert.equal(retry.state.ply,2);assert.equal(retry.state.count[1],1);assert.equal(retry.state.board[50],2);assert.equal(retry.state._moveReceipts,undefined);assert.equal((await call(store,path+'/move',{...body,action:1},host.token)).status,400);assert.equal((await call(store,path+'/move',body,guest.token)).status,400);
+});
+test('concurrent duplicate move requests share the same server acknowledgement',async()=>{
+ const store=memoryStore(),{host,guest}=await pair(store),path=`/api/rooms/${host.code}/move`,body={action:0,version:guest.version,matchId:guest.state.matchId,moveId:crypto.randomUUID()};const all=await Promise.all([call(store,path,body,host.token),call(store,path,body,host.token)]);assert.ok(all.every(r=>r.status===200));assert.equal(all[0].version,all[1].version);assert.equal(all[1].state.ply,1);
+});
+test('a retry from the old match cannot deploy into an agreed rematch',async()=>{
+ const store=memoryStore(),{host,guest}=await pair(store),path=`/api/rooms/${host.code}`,body={action:'resign',version:guest.version,matchId:guest.state.matchId,moveId:crypto.randomUUID()};const end=await call(store,path+'/move',body,host.token);assert.equal((await call(store,path+'/move',body,host.token)).status,200);const offer=await offerRematch(store,path,end.state,end.version,host.token);const next=await call(store,path+'/rematch',{action:'accept',version:offer.version,matchId:end.state.matchId,offerId:offer.state.rematch.id},guest.token);assert.equal((await call(store,path+'/move',body,host.token)).status,409);assert.equal(next.state.winner,null);
+});
+test('unchanged room polling is compact, authenticated and still reports new versions',async()=>{
+ const store=memoryStore(),{host,guest}=await pair(store),path=`/api/rooms/${host.code}`;const same=await call(store,path+'?since='+guest.version,null,host.token);assert.equal(same.unchanged,true);assert.equal(same.state,undefined);assert.equal(same.version,guest.version);assert.equal((await call(store,path+'?since='+guest.version)).status,401);await call(store,path+'/move',{action:0,version:guest.version},host.token);const newer=await call(store,path+'?since='+guest.version,null,guest.token);assert.equal(newer.unchanged,undefined);assert.equal(newer.state.board[0],1);assert.equal((await call(store,path+'?since=invalid',null,guest.token)).state.board[0],1);
+});
+test('native requests expose timing without tokens or query text',async()=>{
+ const store=memoryStore(),{host}=await pair(store),r=await handleAPI(new Request(`https://kingdom.test/api/rooms/${host.code}`,{headers:{Origin:'https://kingdoms.local',Authorization:'Bearer '+host.token}}),store);assert.match(r.headers.get('Server-Timing'),/api;dur=[\d.]+/);assert.equal(r.headers.get('Access-Control-Expose-Headers'),'Server-Timing');assert.ok(!r.headers.get('Server-Timing').includes(host.token));
+});

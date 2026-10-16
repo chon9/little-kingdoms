@@ -91,7 +91,8 @@ try{
     assert.equal(guest.state.players[2].avatar,25);
     await until('!document.querySelector("#room-status").textContent.includes("Waiting") && !document.querySelector("#pass").disabled');
     await until('document.querySelector("#orange-avatar").getAttribute("aria-label")==="Huang Yueying"');
-    await click('[data-index="30"]');await click('#deploy');await until('document.querySelectorAll(".cell.blue:not(.ghost)").length===1');
+    await evaluate("window.__nativeFetch=window.fetch;window.__nativeLostAck=0;window.fetch=async(url,options)=>{const r=await window.__nativeFetch(url,options);if(String(url).endsWith('/move')&&window.__nativeLostAck++===0)throw new TypeError('Simulated lost acknowledgement');return r;}");
+    await click('[data-index="30"]');await click('#deploy');await until('document.querySelectorAll(".cell.blue:not(.ghost)").length===1');assert.equal(await evaluate('document.querySelector("#blue-castles").textContent'),'39','lost acknowledgement retry spends one castle');await evaluate('window.fetch=window.__nativeFetch;delete window.__nativeFetch');
     const seen=await api('/api/rooms/'+code,null,guest.token);assert.equal(seen.state.board[30],1);
     await api('/api/rooms/'+code+'/move',{action:50,version:seen.version},guest.token);await until('document.querySelectorAll(".cell.orange").length===1');
     await click('#battle-leave');await click('#cancel-leave-room');
@@ -106,5 +107,5 @@ try{
     await click('#create-room');await until('document.body.dataset.screen==="room"');const cancelledCode=await evaluate('document.querySelector("#lobby-room-code").textContent');await click('#room-leave');await click('#confirm-leave-room');await until('document.body.dataset.screen==="lobby"');const closedInvite=await fetch(base+'/api/rooms/'+cancelledCode+'/join',{method:'POST',body:'{}',signal:AbortSignal.timeout(20000)});assert.equal(closedInvite.status,410,'closing a native waiting room invalidates its invitation');
   }
   assert.deepEqual(errors,[],'native renderer has no uncaught errors');
-  console.log('Windows client checks passed: '+(lite?'WebView2 local virtual origin, native fullscreen button/F11/Alt+Enter/Escape, window bounds restoration, 40 avatars, offline music':'bundled app protocol')+', isolated renderer, offline launch, local bot, undo, level-10 defensive regression'+(process.argv.includes('--online')?', hosted same-room mutual rematch, cross-client PvP, waiting lobby, visible leave/resign, closed invitations, bidirectional moves and shared avatars':'')+'.');
+  console.log('Windows client checks passed: '+(lite?'WebView2 local virtual origin, native fullscreen button/F11/Alt+Enter/Escape, window bounds restoration, 40 avatars, offline music':'bundled app protocol')+', isolated renderer, offline launch, local bot, undo, level-10 defensive regression'+(process.argv.includes('--online')?', safe lost-acknowledgement retry, hosted same-room mutual rematch, cross-client PvP, waiting lobby, visible leave/resign, closed invitations, bidirectional moves and shared avatars':'')+'.');
 }finally{ws?.close();child.kill();}

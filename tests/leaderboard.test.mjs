@@ -95,7 +95,7 @@ test('generated migrations preserve rooms and D1 SQL records atomic idempotent w
   const plan=sqlite.prepare('EXPLAIN QUERY PLAN SELECT COUNT(*) FROM online_results WHERE commanderId=? AND won=?').all('public-id',1);
   assert.ok(plan.some(row=>row.detail.includes('COVERING INDEX online_results_commander_won')),JSON.stringify(plan));
   function statement(sql,args=[]){return{bind(...values){return statement(sql,values);},first(){return sqlite.prepare(sql).get(...args)||null;},all(){return{results:sqlite.prepare(sql).all(...args)};},run(){return{meta:{changes:Number(sqlite.prepare(sql).run(...args).changes)}};}};}
-  const db={prepare:statement,async batch(statements){sqlite.exec('BEGIN');try{const result=statements.map(s=>s.run());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}},store=new D1Store(db);
+  let resultBatches=0;const db={prepare:statement,async batch(statements){resultBatches++;sqlite.exec('BEGIN');try{const result=statements.map(s=>s.run());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}},store=new D1Store(db);
   const {host,guest,a,b}=await duel(store),version=await deployFour(store,host,guest);
   await assert.rejects(store.recordResults([
     {matchId:'rollback-proof',commanderId:a.commander.id,won:1,completed:Date.now()},
@@ -104,7 +104,9 @@ test('generated migrations preserve rooms and D1 SQL records atomic idempotent w
   assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM online_results WHERE matchId=?').get('rollback-proof').n,0,'both result rows must roll back on failure');
   const pass=await call(store,`/api/rooms/${host.code}/move`,{action:'pass',version},host.token);
   const end=await call(store,`/api/rooms/${host.code}/move`,{action:'pass',version:pass.version},guest.token);assert.equal(end.status,200);assert.equal(end.state.winner,2);
+  const batchesAfterFinish=resultBatches;assert.equal(JSON.parse((await store.get(host.code)).state)._resultSaved,end.state.matchId);assert.equal(end.state._resultSaved,undefined);
   await Promise.all(Array.from({length:10},()=>call(store,`/api/rooms/${host.code}`,undefined,guest.token)));
+  assert.equal(resultBatches,batchesAfterFinish,'completed polls do not repeat result write batches');
   assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM online_results').get().n,2);
   assert.equal((await call(store,'/api/commanders/me',undefined,a.token)).commander.onlineLosses,1);
   assert.equal((await call(store,'/api/commanders/me',undefined,b.token)).commander.onlineWins,1);

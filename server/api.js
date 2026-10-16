@@ -5,7 +5,7 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 async function digest(token) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))), n => n.toString(16).padStart(2, '0')).join(''); }
 function randomToken() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2, '0')).join(''); }
 function randomCode() { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from(crypto.getRandomValues(new Uint8Array(6)), n => chars[n % 32]).join(''); }
-function exposed(room, color, token) { const state=JSON.parse(room.state);return { code: room.code, state, version: room.version, ready: !!room.guestHash&&!state.roomClosed, phase:state.roomClosed?'closed':state.winner?'finished':room.guestHash?'playing':'waiting', hostColor:room.hostColor, color, level: room.level, ...(token ? { token } : {}) }; }
+function exposed(room, color, token) { const state=JSON.parse(room.state);delete state._resultSaved;delete state._moveReceipts;return { code: room.code, state, version: room.version, ready: !!room.guestHash&&!state.roomClosed, phase:state.roomClosed?'closed':state.winner?'finished':room.guestHash?'playing':'waiting', hostColor:room.hostColor, color, level: room.level, ...(token ? { token } : {}) }; }
 function commanderLevel(xp) { let level=1;while(level<50&&xp>=80*level+20*level**2)level++;return level; }
 function publicCommander(row) { return {id:row.id,displayName:row.displayName,avatar:row.avatar,xp:row.xp,level:commanderLevel(row.xp),matches:row.matches,wins:row.wins,localWins:row.wins,localLosses:row.matches-row.wins,onlineWins:Number(row.onlineWins||0),onlineLosses:Number(row.onlineLosses||0)}; }
 const validAvatar=value=>Number.isInteger(value)&&value>=0&&value<40;
@@ -17,57 +17,62 @@ const commanderCounts = "SELECT c.*, (SELECT COUNT(*) FROM online_results r WHER
 
 // An accepted move must remain successful even when the result service is briefly
 // unavailable. Subsequent authenticated room reads reconcile the append-only rows.
-async function reconcileResult(store, state) {
+async function reconcileResult(store, state, room=null) {
+  if(state._resultSaved===state.matchId&&state.matchId)return true;
   if(!state.winner||!store.recordResults||state.count[1]<2||state.count[2]<2)return true;
   const blue=state.players?.[1]?.commanderId,orange=state.players?.[2]?.commanderId;
   if(!blue||!orange||blue===orange||!state.matchId)return true;
-  try { await store.recordResults([1,2].map(color=>({matchId:state.matchId,commanderId:state.players[color].commanderId,won:state.winner===color?1:0,completed:Date.now()})));return true; }
+  try { await store.recordResults([1,2].map(color=>({matchId:state.matchId,commanderId:state.players[color].commanderId,won:state.winner===color?1:0,completed:Date.now()})));
+    if(room&&store.markResultRecorded){try{await store.markResultRecorded(room.code,room.version,state.matchId);}catch{console.error('Result acknowledgement deferred.');}}
+    return true; }
   catch { console.error('Leaderboard result recording deferred.');return false; }
 }
 
 export class D1Store {
-  constructor(db) { this.db = db; }
-  get(code) { return this.db.prepare('SELECT * FROM rooms WHERE code = ?').bind(code).first(); }
+  constructor(db) { this.db = db;this.metrics={milliseconds:0,queries:0}; }
+  async measured(run,count=1){const start=performance.now();this.metrics.queries+=count;try{return await run();}finally{this.metrics.milliseconds+=performance.now()-start;}}
+  get(code) { return this.measured(()=>this.db.prepare('SELECT * FROM rooms WHERE code = ?').bind(code).first()); }
+  markResultRecorded(code,version,matchId){return this.measured(()=>this.db.prepare("UPDATE rooms SET state=json_set(state,'$._resultSaved',?) WHERE code=? AND version=? AND json_extract(state,'$.matchId')=?").bind(matchId,code,version,matchId).run());}
   async insert(room) {
-    const r = await this.db.prepare('INSERT OR IGNORE INTO rooms (code, hostHash, guestHash, hostColor, level, state, version, expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(room.code, room.hostHash, null, room.hostColor, room.level, room.state, room.version, room.expires).run();
+    const r = await this.measured(()=>this.db.prepare('INSERT OR IGNORE INTO rooms (code, hostHash, guestHash, hostColor, level, state, version, expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(room.code, room.hostHash, null, room.hostColor, room.level, room.state, room.version, room.expires).run());
     return r.meta.changes === 1;
   }
   async join(code, version, hash, state) {
-    const r = await this.db.prepare('UPDATE rooms SET guestHash = ?, state = ?, version = version + 1 WHERE code = ? AND version = ? AND guestHash IS NULL AND expires > ?').bind(hash, state, code, version, Date.now()).run();
+    const r = await this.measured(()=>this.db.prepare('UPDATE rooms SET guestHash = ?, state = ?, version = version + 1 WHERE code = ? AND version = ? AND guestHash IS NULL AND expires > ?').bind(hash, state, code, version, Date.now()).run());
     return r.meta.changes === 1;
   }
   async update(code, version, state) {
-    const r = await this.db.prepare('UPDATE rooms SET state = ?, version = version + 1 WHERE code = ? AND version = ? AND expires > ?').bind(state, code, version, Date.now()).run();
+    const r = await this.measured(()=>this.db.prepare('UPDATE rooms SET state = ?, version = version + 1 WHERE code = ? AND version = ? AND expires > ?').bind(state, code, version, Date.now()).run());
     return r.meta.changes === 1;
   }
-  commanderByHash(hash) { return this.db.prepare(commanderCounts+' WHERE c.tokenHash=?').bind(hash).first(); }
+  commanderByHash(hash) { return this.measured(()=>this.db.prepare(commanderCounts+' WHERE c.tokenHash=?').bind(hash).first()); }
   async insertCommander(row) {
-    await this.db.prepare('INSERT INTO commanders (id,tokenHash,displayName,avatar,xp,matches,wins,created) VALUES (?,?,?,?,0,0,0,?)').bind(row.id,row.tokenHash,row.displayName,row.avatar,row.created).run();
+    await this.measured(()=>this.db.prepare('INSERT INTO commanders (id,tokenHash,displayName,avatar,xp,matches,wins,created) VALUES (?,?,?,?,0,0,0,?)').bind(row.id,row.tokenHash,row.displayName,row.avatar,row.created).run());
   }
   async updateCommander(id, value) {
     // Each input and stored row satisfies wins <= matches. Taking MAX for both
     // preserves that invariant, including updates racing from multiple tabs.
-    await this.db.prepare('UPDATE commanders SET displayName=?,avatar=?,xp=MAX(xp,?),matches=MAX(matches,?),wins=MAX(wins,?) WHERE id=?').bind(value.displayName,value.avatar,value.xp,value.matches,value.wins,id).run();
+    await this.measured(()=>this.db.prepare('UPDATE commanders SET displayName=?,avatar=?,xp=MAX(xp,?),matches=MAX(matches,?),wins=MAX(wins,?) WHERE id=?').bind(value.displayName,value.avatar,value.xp,value.matches,value.wins,id).run());
   }
   async leaderboard(kind, limit) {
     const order=kind==='wins'?'onlineWins DESC,onlineLosses ASC,c.created ASC,c.id ASC':'c.xp DESC,c.wins DESC,c.created ASC,c.id ASC';
-    const rows=await this.db.prepare(commanderCounts+' ORDER BY '+order+' LIMIT ?').bind(limit).all();return rows.results;
+    const rows=await this.measured(()=>this.db.prepare(commanderCounts+' ORDER BY '+order+' LIMIT ?').bind(limit).all());return rows.results;
   }
-  recordResults(results) { return this.db.batch(results.map(r=>this.db.prepare('INSERT OR IGNORE INTO online_results (matchId,commanderId,won,completed) VALUES (?,?,?,?)').bind(r.matchId,r.commanderId,r.won,r.completed))); }
+  recordResults(results) { return this.measured(()=>this.db.batch(results.map(r=>this.db.prepare('INSERT OR IGNORE INTO online_results (matchId,commanderId,won,completed) VALUES (?,?,?,?)').bind(r.matchId,r.commanderId,r.won,r.completed))),results.length); }
 }
 
 const NATIVE_ORIGINS = new Set(['https://localhost','http://localhost','capacitor://localhost','app://kingdoms','https://kingdoms.local']);
 export async function handleAPI(request, store) {
+  const started=performance.now();
   const origin=request.headers.get('Origin'),sameOrigin=!origin||origin===new URL(request.url).origin,nativeOrigin=NATIVE_ORIGINS.has(origin);
   if(!sameOrigin&&!nativeOrigin)return json({error:'This client origin is not allowed.'},403);
   let response;
   if(request.method==='OPTIONS')response=new Response(null,{status:204});
   else response=await processAPI(request,store);
-  if(nativeOrigin){
-    const headers=new Headers(response.headers);headers.set('Access-Control-Allow-Origin',origin);headers.set('Access-Control-Allow-Methods','GET, POST, OPTIONS');headers.set('Access-Control-Allow-Headers','Content-Type, Authorization');headers.set('Access-Control-Max-Age','600');headers.set('Vary','Origin');
-    return new Response(response.body,{status:response.status,headers});
-  }
-  return response;
+  const headers=new Headers(response.headers),db=store?.metrics;
+  headers.set('Server-Timing',`api;dur=${(performance.now()-started).toFixed(1)}${db?`, d1;dur=${db.milliseconds.toFixed(1)}, d1q;desc="${db.queries}"`:''}`);
+  if(nativeOrigin){headers.set('Access-Control-Allow-Origin',origin);headers.set('Access-Control-Allow-Methods','GET, POST, OPTIONS');headers.set('Access-Control-Allow-Headers','Content-Type, Authorization');headers.set('Access-Control-Max-Age','600');headers.set('Vary','Origin');headers.set('Access-Control-Expose-Headers','Server-Timing');}
+  return new Response(response.body,{status:response.status,headers});
 }
 
 async function processAPI(request, store) {
@@ -138,7 +143,12 @@ async function processAPI(request, store) {
     if (!/^[a-f0-9]{64}$/.test(token)) return json({ error: 'Rejoin this room from your original tab.' }, 401);
     const hash = await digest(token), color = hash === room.hostHash ? room.hostColor : hash === room.guestHash ? 3 - room.hostColor : null;
     if (!color) return json({ error: 'You are not a commander in this room.' }, 403);
-    if (!command && request.method === 'GET') { await reconcileResult(store,JSON.parse(room.state));return json(exposed(room, color)); }
+    if (!command && request.method === 'GET') {
+      await reconcileResult(store,JSON.parse(room.state),room);
+      const current=exposed(room,color),since=url.searchParams.get('since');
+      if(since!==null&&/^\d+$/.test(since)&&Number(since)===room.version){delete current.state;return json({...current,unchanged:true});}
+      return json(current);
+    }
     if(command==='rematch'&&isPost){
       const state=JSON.parse(room.state),offer=state.rematch;
       if(state.roomClosed||state.roomDeparted?.length)return json({error:'A commander left this room. Create a new room to play again.'},409);
@@ -173,24 +183,35 @@ async function processAPI(request, store) {
       const next=room.guestHash?{...(state.winner?state:play({...state,turn:color},'resign')),roomDeparted:[...(state.roomDeparted||[]),color],rematch:null}:{...state,roomClosed:true};
       const serialized=JSON.stringify(next);
       if(!await store.update(code,room.version,serialized))return json({error:'The room changed. Check the lobby before leaving.'},409);
-      await reconcileResult(store,next);
+      await reconcileResult(store,next,{code,version:room.version+1});
       return json(exposed({...room,state:serialized,version:room.version+1},color));
     }
     if (command !== 'move' || !isPost) return json({ error: 'Method not allowed.' }, 405);
     if (JSON.parse(room.state).roomClosed) return json({error:'This room was closed by its host. Create or join another room.'},410);
     if (!room.guestHash) return json({ error: 'Wait for your rival to join.' }, 409);
+    const state = JSON.parse(room.state);
+    const moveId=body.moveId;
+    if(moveId!==undefined){
+      if(typeof moveId!=='string'||! /^[0-9a-f-]{36}$/.test(moveId))return json({error:'Choose a valid move request.'},400);
+      if(body.matchId!==state.matchId)return json({error:'This move belongs to an older duel. Refresh the room.'},409);
+      const receipt=state._moveReceipts?.find(r=>r.id===moveId);
+      if(receipt){if(receipt.color!==color||receipt.action!==body.action)return json({error:'Choose a valid move request.'},400);return json({...exposed(room,color),acknowledgedMove:moveId});}
+    }
     if (!Number.isInteger(body.version) || body.version !== room.version) return json({ error: 'The board changed. Refreshing your battlefield.' }, 409);
     if (body.action !== 'pass' && body.action !== 'resign' && (!Number.isInteger(body.action) || body.action < 0 || body.action > 80)) return json({ error: 'Choose a valid move.' }, 400);
-    const state = JSON.parse(room.state);
     if (state.winner) return json({ error: 'This battle has ended.' }, 409);
     if (body.action !== 'resign' && state.turn !== color) return json({ error: 'Wait for your turn.' }, 409);
     let next;
     try { next = play(body.action === 'resign' ? { ...state, turn: color } : state, body.action); }
     catch (e) { return json({ error: e.message }, 422); }
+    if(moveId)next._moveReceipts=[...(state._moveReceipts||[]),{id:moveId,color,action:body.action}].slice(-8);
     const serialized = JSON.stringify(next);
-    if (!await store.update(code, room.version, serialized)) return json({ error: 'A move arrived first. Refreshing your battlefield.' }, 409);
-    await reconcileResult(store,next);
-    return json(exposed({ ...room, state: serialized, version: room.version + 1 }, color));
+    if (!await store.update(code, room.version, serialized)) {
+      if(moveId){const latest=await store.get(code),receipt=latest&&JSON.parse(latest.state)._moveReceipts?.find(r=>r.id===moveId&&r.color===color&&r.action===body.action);if(receipt)return json({...exposed(latest,color),acknowledgedMove:moveId});}
+      return json({ error: 'A move arrived first. Refreshing your battlefield.' }, 409);
+    }
+    await reconcileResult(store,next,{code,version:room.version+1});
+    return json({...exposed({ ...room, state: serialized, version: room.version + 1 }, color),...(moveId?{acknowledgedMove:moveId}:{})});
   } catch (error) {
     console.error('Room service error:', error?.message);
     return json({ error: 'The room service is temporarily unavailable. Your local modes are ready to play.' }, 503);

@@ -17,6 +17,7 @@ const store={
   async insert(room){if(rooms.has(room.code))return false;rooms.set(room.code,{...room});await persist();return true;},
   async join(code,version,hash,state){const r=rooms.get(code);if(!r||r.version!==version||r.guestHash||r.expires<=Date.now())return false;r.guestHash=hash;r.state=state;r.version++;await persist();return true;},
   async update(code,version,state){const r=rooms.get(code);if(!r||r.version!==version||r.expires<=Date.now())return false;r.state=state;r.version++;await persist();return true;},
+  async markResultRecorded(code,version,matchId){const row=rooms.get(code);if(!row||row.version!==version)return;const state=JSON.parse(row.state);if(state.matchId!==matchId)return;state._resultSaved=matchId;row.state=JSON.stringify(state);await persist();},
   async commanderByHash(hash){return withResults([...commanders.values()].find(c=>c.tokenHash===hash));},
   async insertCommander(row){commanders.set(row.id,{...row});await persistCommunity();},
   async updateCommander(id,value){const row=commanders.get(id);Object.assign(row,{...value,xp:Math.max(row.xp,value.xp),matches:Math.max(row.matches,value.matches),wins:Math.max(row.wins,value.wins)});await persistCommunity();},

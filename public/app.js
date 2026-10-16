@@ -39,6 +39,7 @@ const TITLES = ['Rookie','Apprentice','Sentry','Captain','Tactician','Veteran','
 let config = { mode: 'bot', level: 5, humanColor: 1 }, state = newGame(), started = false;
 let selected = null, snapshots = [], thinking = false, pending = false, botWorker = null, botTimer = null, emotionTimer = null, roomTimer = null;
 let room = null, roomError = '', emotion = '', toastTimer, searchInfo = null, cutinTimer, cutinCooldown=0;
+let roomRead=null,roomReadEpoch=0,roomFailures=0,pendingAction=null,networkSample=null;
 let profile=normalizeProfile(null);
 try{profile=normalizeProfile(JSON.parse(localStorage.getItem(PROFILE_KEY)));}catch{}
 const cells = [];
@@ -156,10 +157,11 @@ function render(pop = false) {
     if(g.protected)g.stones.forEach(i=>protectedStones.add(i));
   }
   for(let i=0;i<81;i++) {
-    const c=state.board[i],isSelected=selected===i,cell=cells[i],ghost=isSelected&&!c&&!t.owners[i];
+    const c=state.board[i],isSelected=selected===i,cell=cells[i],sending=pending&&pendingAction===i,ghost=(isSelected||sending)&&!c&&!t.owners[i];
     cell.className='cell'+(c?' '+['','blue','orange','neutral'][c]:'')+(show&&t.owners[i]?' owned-'+(t.owners[i]===1?'blue':'orange'):'')+(isSelected?' selected':'')+(ghost?' ghost '+(state.turn===1?'blue':'orange'):'')+(state.last===i?' last':'')+(danger.has(i)?' danger':'')+(pop&&state.last===i?' pop':'');
     cell.innerHTML=c===3?'<svg aria-hidden="true"><use href="#castle"/></svg>':c||ghost?castleMarkup(castleFor(c||state.turn),c||state.turn):'';
-    const desc=c===3?'Neutral shared wall':c?`${colorName(c)} castle${danger.has(i)?', danger: opponent has a legal winning capture':''}${protectedStones.has(i)?', protected by sealed territory':''}`:t.owners[i]?`${colorName(t.owners[i])} sealed territory: locked for both players`:'Empty';
+    cell.classList.toggle('pending-placement',sending&&!c);
+    const desc=sending&&!c?'Castle awaiting server confirmation':c===3?'Neutral shared wall':c?`${colorName(c)} castle${danger.has(i)?', danger: opponent has a legal winning capture':''}${protectedStones.has(i)?', protected by sealed territory':''}`:t.owners[i]?`${colorName(t.owners[i])} sealed territory: locked for both players`:'Empty';
     cell.setAttribute('aria-label',`${positionName(i)}: ${desc}${isSelected?', selected':''}`);
     cell.setAttribute('aria-pressed',String(isSelected));
     // Occupied squares stay focusable for keyboard inspection.
@@ -189,7 +191,7 @@ function render(pop = false) {
     else {title=pending?'Sending your move…':'Your rival is planning';subtitle=pending?'Securing your castle on the battlefield.':'The next move will appear here automatically.';}
   }
   $('turn-title').textContent=title;$('turn-subtitle').textContent=subtitle;
-  $('status-orb').classList.toggle('thinking',thinking);$('status-orb').style.background=state.winner?'#9aaa74':state.turn===1?'#6193a0':'#c98a58';
+  $('status-orb').classList.toggle('thinking',thinking||pending);$('status-orb').style.background=state.winner?'#9aaa74':state.turn===1?'#6193a0':'#c98a58';
   $('move-counter').textContent='TURN '+String(state.ply).padStart(2,'0');
   const ended=started&&!!state.winner;
   $('deploy').disabled=pending||(!ended&&(started?(!ownTurn()||selected===null):config.mode==='online'));$('deploy').innerHTML=ended?(config.mode==='online'?'New duel <span>↗</span>':'Play again <span>↻</span>'):!started?'To battle <span>↗</span>':selected===null?'Tap a square <span>＋</span>':`Deploy ${positionName(selected)} <span>＋</span>`;
@@ -199,6 +201,7 @@ function render(pop = false) {
   $('battle-leave').hidden=config.mode!=='online'||!room;$('battle-leave').disabled=pending;
   $('battle-back').querySelector('span').textContent=room?'Room':'Lobby';
   $('resign').disabled=!started||!!state.winner||pending||(config.mode==='online'&&!room?.ready);
+  if(pending&&pendingAction!==null)$('deploy').textContent='Sending…';
   renderRematch();localize();
 }
 
@@ -227,10 +230,14 @@ async function act(action) {
   if(!ownTurn()&&action!=='resign')return;
   if(config.mode==='online') {
     if(!room?.ready||state.winner||pending)return;
-    pending=true;render();
-    try {const result=await api(`/api/rooms/${room.code}/move`,{action,version:room.version},room.token);room.version=result.version;room.ready=result.ready;const before=state;state=result.state;selected=null;tone(action==='pass'?'pass':'place');render(true);reactPlayer(before,state);if(state.winner&&!before.winner)showResult();}
-    catch(e){toast(e.message);await pollRoom();}
-    finally{pending=false;render();}
+    const code=room.code,token=room.token,commandPly=state.ply,command={action,version:room.version,matchId:state.matchId,moveId:crypto.randomUUID()};
+    const slowNotice=setTimeout(()=>{if(room?.code===code&&pending)toast('Connection is slow. Confirming your move…');},1800);
+    pending=true;pendingAction=Number.isInteger(action)?action:null;render();
+    try {let result;try{result=await api(`/api/rooms/${code}/move`,command,token);}catch(e){if(e.status&&e.status<500)throw e;toast('Connection interrupted. Retrying your move safely…');result=await api(`/api/rooms/${code}/move`,command,token);}
+      if(room?.code!==code||result.version<room.version)return;
+      room.version=result.version;room.ready=result.ready;const before=state;state=result.state;selected=null;storeRoom();tone(action==='pass'?'pass':'place');render(true);reactPlayer(before,state);if(state.winner&&!before.winner)showResult();}
+    catch(e){pending=false;pendingAction=null;selected=null;await pollRoom();const accepted=state.matchId===command.matchId&&state.history[commandPly]?.color===config.humanColor&&state.history[commandPly]?.index===action;toast(accepted?'Your move is confirmed.':e.message);}
+    finally{clearTimeout(slowNotice);pending=false;pendingAction=null;render();scheduleRoomPoll();}
     return;
   }
   const before=state;
@@ -319,13 +326,23 @@ function showResult() {
   if(reward.level>reward.previousLevel){const bonus=document.createElement('button');bonus.className='result-pulls';bonus.textContent=`✦ +${reward.level-reward.previousLevel} level-up pull${reward.level-reward.previousLevel===1?'':'s'} · Open Treasury →`;bonus.onclick=showTreasury;$('match-reward').append(bonus);}
 }
 
-async function api(path,body,token) {
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+async function api(path,body,token,{signal}={}) {
+  if(body&&/^\/api\/rooms\/[A-Z0-9]{6}\/(move|rematch|leave)$/.test(path))cancelRoomRead();
+  const controller=new AbortController(),startedAt=performance.now(),timer=setTimeout(()=>controller.abort(),12000),cancel=()=>controller.abort();
+  signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)controller.abort();
   try {
     const res=await fetch(API_BASE+path,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:controller.signal});
-    const data=await res.json();if(!res.ok){const error=new Error(data.error||'Could not reach the room.');error.status=res.status;throw error;}return data;
-  }catch(e){if(e.name==='AbortError')throw new Error('Connection timed out. Your room is still saved; retry shortly.');throw e;}
-  finally{clearTimeout(timer);}
+    if(path.startsWith('/api/rooms/')){const timing=res.headers.get('Server-Timing')||'',database=timing.match(/(?:^|,)\s*d1;dur=([\d.]+)/);networkSample={roundTrip:Math.round(performance.now()-startedAt),database:database?Math.round(Number(database[1])):null};}
+    let data;try{data=await res.json();}catch{const error=new Error('The server did not confirm the request. Reconnecting…');error.status=502;throw error;}
+    if(!res.ok){const error=new Error(data.error||'Could not reach the room.');error.status=res.status;throw error;}return data;
+  }catch(e){if(signal?.aborted){const error=new Error('Room read cancelled');error.name='AbortError';throw error;}if(e.name==='AbortError')throw new Error('Connection timed out. Your room is still saved; retry shortly.');throw e;}
+  finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);}
+}
+function cancelRoomRead(){clearTimeout(roomTimer);roomReadEpoch++;roomRead?.controller.abort();roomRead=null;}
+function scheduleRoomPoll(delay){
+  clearTimeout(roomTimer);if(!room||document.hidden)return;
+  const normal=!room.ready||state.turn!==config.humanColor&&!state.winner||state.rematch?.status==='pending'?1000:2500;
+  roomTimer=setTimeout(pollRoom,delay??(roomFailures?Math.min(12000,1000*2**Math.min(roomFailures,4)):normal));
 }
 function rematchPrimaryAction(){return state.rematch?.status==='pending'?'accept':'request';}
 function renderRematch(){
@@ -354,7 +371,7 @@ async function submitRematch(action){
     if(room?.code!==code)return;
     const before=state;state=data.state;room.version=data.version;room.ready=data.ready;const restarted=rematchStarted(before);storeRoom();render();if(restarted)playerCutin(config.humanColor,'start',true);
   }catch(e){pending=false;await pollRoom();toast(e.message);}
-  finally{pending=false;render();}
+  finally{pending=false;render();scheduleRoomPoll();}
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-rematch-action]');if(b&&!b.disabled)submitRematch(b.dataset.rematchAction);});
 async function leaveFinishedRoom(onLeft){
@@ -402,25 +419,27 @@ function requestLeaveRoom(onLeft=resetOnlineRoom){
     finally{pending=false;render();}
   };
 }
-function stopRoom(){roomError='';clearTimeout(roomTimer);roomTimer=null;room=null;try{localStorage.removeItem('little-kingdoms-room');sessionStorage.removeItem('little-kingdoms-room');}catch{}history.replaceState(null,'',location.pathname);}
+function stopRoom(){cancelRoomRead();roomFailures=0;roomError='';clearTimeout(roomTimer);roomTimer=null;room=null;try{localStorage.removeItem('little-kingdoms-room');sessionStorage.removeItem('little-kingdoms-room');}catch{}history.replaceState(null,'',location.pathname);}
 function connectRoom(data) {
   stopBot();resetEmotion();config={mode:'online',humanColor:data.color,level:data.level};
-  roomError='';room={code:data.code,token:data.token,version:data.version,ready:data.ready,hostColor:data.hostColor};state=data.state;started=data.ready;screen=data.ready?'battle':'room';snapshots=[];selected=null;
+  cancelRoomRead();roomFailures=0;roomError='';room={code:data.code,token:data.token,version:data.version,ready:data.ready,hostColor:data.hostColor};state=data.state;started=data.ready;screen=data.ready?'battle':'room';snapshots=[];selected=null;
   history.replaceState(null,'',location.pathname+'?room='+room.code);storeRoom();render();if(data.ready)playerCutin(config.humanColor,'start',true);clearTimeout(roomTimer);roomTimer=setTimeout(pollRoom,1400);
 }
-let polling=false;
 async function pollRoom(){
-  if(!room||document.hidden)return;clearTimeout(roomTimer);if(polling){roomTimer=setTimeout(pollRoom,500);return;}polling=true;const code=room.code;
+  if(!room||document.hidden)return;
+  if(pending){scheduleRoomPoll(500);return;}if(roomRead)return;
+  clearTimeout(roomTimer);const code=room.code,startedAt=performance.now(),read={controller:new AbortController(),epoch:roomReadEpoch};roomRead=read;
   try {
-    const data=await api(`/api/rooms/${code}`,null,room.token);
-    if(!room||room.code!==code)return;
-    if(data.phase==='closed'||data.state.roomClosed){resetOnlineRoom();toast('This room was closed by its host. Create or join another room.');return;}
-    roomError='';const wasReady=room.ready;const ended=!!state.winner;const changed=data.version!==room.version||data.ready!==room.ready;
+    const data=await api(`/api/rooms/${code}${room.version>=0?'?since='+room.version:''}`,null,room.token,{signal:read.controller.signal});
+    if(roomRead!==read||read.epoch!==roomReadEpoch||!room||room.code!==code||data.version<room.version)return;
+    if(data.phase==='closed'||data.state?.roomClosed){resetOnlineRoom();toast('This room was closed by its host. Create or join another room.');return;}
+    const recovered=!!roomError;roomError='';roomFailures=0;
+    if(data.unchanged){if(recovered)render();return;}
+    const wasReady=room.ready,ended=!!state.winner,changed=data.version>room.version||data.ready!==room.ready;
     if(changed&&!pending){const before=state;room.version=data.version;room.ready=data.ready;room.hostColor=data.hostColor;state=data.state;started=data.ready;selected=null;const restarted=rematchStarted(before);if(!wasReady&&data.ready){screen='battle';}storeRoom();render(true);if(restarted||!wasReady&&data.ready)playerCutin(config.humanColor,'start',true);else if(!state.winner||!before.winner)reactPlayer(before,state);if(state.winner&&!ended)showResult();else if(before.rematch?.id!==state.rematch?.id&&state.rematch?.status==='pending'&&!state.rematch.accepted.includes(config.humanColor))toast('Your rival requested a rematch. Accept from Results or the room lobby.');else tone();}
-    if($('room-status'))$('room-status').textContent=room.ready?`Connected. You command ${colorName(config.humanColor)}.`:'Waiting for your opponent…';
-    renderRoomLobby();localize($('room-screen'));localize($('room-status'));
-  }catch(e){if(room?.code===code){if([401,403,404,410].includes(e.status)){resetOnlineRoom();toast(e.message);}else{roomError=e.message+' Reconnecting…';render();}}}
-  finally{polling=false;if(room?.code===code&&!document.hidden)roomTimer=setTimeout(pollRoom,1700);}
+    if(recovered&&!changed)render();
+  }catch(e){if(roomRead===read&&room?.code===code&&e.name!=='AbortError'){if([401,403,404,410].includes(e.status)){resetOnlineRoom();toast(e.message);}else{roomFailures++;roomError=e.message+' Reconnecting…';render();}}}
+  finally{if(roomRead===read){roomRead=null;if(room?.code===code){const elapsed=performance.now()-startedAt;const normal=!room.ready||state.turn!==config.humanColor&&!state.winner||state.rematch?.status==='pending'?1000:2500;scheduleRoomPoll(roomFailures?undefined:elapsed>1000?Math.max(1000,elapsed/2):Math.max(200,normal-elapsed));}}}
 }
 
 $('difficulty').addEventListener('input',()=>{const l=Number($('difficulty').value);$('level-title').textContent=`${l} · ${TITLES[l-1]}`;});
@@ -449,7 +468,7 @@ for(const id of['home','battle-back'])$(id).onclick=()=>{screen=room?'room':'lob
 $('resume').onclick=()=>{screen='battle';render();};$('return-to-room').onclick=()=>{screen='room';render();};
 $('fullscreen').onclick=async()=>{try{if(window.kingdomsDesktop){await window.kingdomsDesktop.toggleFullscreen();return;}if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{toast('Fullscreen unavailable on this display.');}};
 function showSettings(){
-  modal(`<p class="eyebrow">YOUR COMMAND TENT</p><h2>${screen==='battle'?'Battle menu':'Settings'}</h2><div class="settings-language-slot"></div><div class="audio-settings"><label>Music volume <output id="music-value">${Math.round(audioSettings.music*100)}%</output><input id="music-volume" type="range" min="0" max="100" value="${audioSettings.music*100}"></label><label>Battle effects <output id="effects-value">${Math.round(audioSettings.effects*100)}%</output><input id="effects-volume" type="range" min="0" max="100" value="${audioSettings.effects*100}"></label><div class="music-library"><label for="music-track">Soundtrack</label><select id="music-track">${MUSIC_TRACKS.map(t=>'<option value="'+t.id+'"'+(t.id===audioSettings.track?' selected':'')+'>'+t.title+'</option>').join('')}</select><label for="music-mode">Playback</label><select id="music-mode"><option value="rotation"${audioSettings.musicMode==='rotation'?' selected':''}>Rotate all tracks</option><option value="shuffle"${audioSettings.musicMode==='shuffle'?' selected':''}>Shuffle all tracks</option><option value="repeat"${audioSettings.musicMode==='repeat'?' selected':''}>Repeat this track</option></select><div class="music-current"><span>Now playing</span><strong id="music-now-playing">${currentMusic().title}</strong><small><span>By</span> <span id="music-author" data-l10n-skip>${currentMusic().author}</span></small><button class="secondary-btn" id="music-next">Next track ⏭</button></div><p id="music-status" role="status" hidden>Music unavailable. Try another track.</p><p class="music-credit"><span>Music is bundled for offline play. Each track has its own license.</span> <a id="music-source" href="${currentMusic().source}" target="_blank" rel="noopener">Source</a> · <a id="music-license" href="${currentMusic().licenseUrl}" target="_blank" rel="noopener" data-l10n-skip>${currentMusic().license}</a> · <a href="/assets/music-credits.txt" target="_blank" rel="noopener">Music credits</a></p></div></div><div class="settings-list"><button class="secondary-btn" id="setting-sound">Master audio <span>${audioSettings.muted?'Muted':'On ♫'}</span></button><button class="secondary-btn" id="setting-cutins">Anime cut-ins <span>${audioSettings.cutins?'On':'Off'}</span></button><button class="secondary-btn" id="setting-voice">Character voice <span>${audioSettings.voice?'On':'Off'}</span></button><button class="secondary-btn" id="setting-fullscreen">Fullscreen <span>${window.kingdomsDesktop?'F11 / Alt+Enter':'⛶'}</span></button><button class="secondary-btn" id="setting-home">${room?'Room lobby':'Battle lobby'} <span>→</span></button>${room?'<button class="secondary-btn" id="setting-room-leave">Leave room <span>↗</span></button>':''}${room?.ready&&!state.winner?'<button class="secondary-btn" id="setting-resign">Resign ⚑</button>':''}<button class="secondary-btn" id="setting-rules">How to play <span>→</span></button>${installPrompt?'<button class="primary-btn" id="install-game">Install game ↓</button>':''}</div><p class="settings-hint">Character voice uses your device’s available speech voice. Bots, music and pass & play work offline in the installed game. Online duels need internet. Levels and avatars save on this device.</p>`);
+  modal(`<p class="eyebrow">YOUR COMMAND TENT</p><h2>${screen==='battle'?'Battle menu':'Settings'}</h2><div class="settings-language-slot"></div>${networkSample&&room?`<p class="network-diagnostics">Last server response: ${networkSample.roundTrip} ms${networkSample.database!==null?` · D1 round trip: ${networkSample.database} ms`:""}</p>`:""}<div class="audio-settings"><label>Music volume <output id="music-value">${Math.round(audioSettings.music*100)}%</output><input id="music-volume" type="range" min="0" max="100" value="${audioSettings.music*100}"></label><label>Battle effects <output id="effects-value">${Math.round(audioSettings.effects*100)}%</output><input id="effects-volume" type="range" min="0" max="100" value="${audioSettings.effects*100}"></label><div class="music-library"><label for="music-track">Soundtrack</label><select id="music-track">${MUSIC_TRACKS.map(t=>'<option value="'+t.id+'"'+(t.id===audioSettings.track?' selected':'')+'>'+t.title+'</option>').join('')}</select><label for="music-mode">Playback</label><select id="music-mode"><option value="rotation"${audioSettings.musicMode==='rotation'?' selected':''}>Rotate all tracks</option><option value="shuffle"${audioSettings.musicMode==='shuffle'?' selected':''}>Shuffle all tracks</option><option value="repeat"${audioSettings.musicMode==='repeat'?' selected':''}>Repeat this track</option></select><div class="music-current"><span>Now playing</span><strong id="music-now-playing">${currentMusic().title}</strong><small><span>By</span> <span id="music-author" data-l10n-skip>${currentMusic().author}</span></small><button class="secondary-btn" id="music-next">Next track ⏭</button></div><p id="music-status" role="status" hidden>Music unavailable. Try another track.</p><p class="music-credit"><span>Music is bundled for offline play. Each track has its own license.</span> <a id="music-source" href="${currentMusic().source}" target="_blank" rel="noopener">Source</a> · <a id="music-license" href="${currentMusic().licenseUrl}" target="_blank" rel="noopener" data-l10n-skip>${currentMusic().license}</a> · <a href="/assets/music-credits.txt" target="_blank" rel="noopener">Music credits</a></p></div></div><div class="settings-list"><button class="secondary-btn" id="setting-sound">Master audio <span>${audioSettings.muted?'Muted':'On ♫'}</span></button><button class="secondary-btn" id="setting-cutins">Anime cut-ins <span>${audioSettings.cutins?'On':'Off'}</span></button><button class="secondary-btn" id="setting-voice">Character voice <span>${audioSettings.voice?'On':'Off'}</span></button><button class="secondary-btn" id="setting-fullscreen">Fullscreen <span>${window.kingdomsDesktop?'F11 / Alt+Enter':'⛶'}</span></button><button class="secondary-btn" id="setting-home">${room?'Room lobby':'Battle lobby'} <span>→</span></button>${room?'<button class="secondary-btn" id="setting-room-leave">Leave room <span>↗</span></button>':''}${room?.ready&&!state.winner?'<button class="secondary-btn" id="setting-resign">Resign ⚑</button>':''}<button class="secondary-btn" id="setting-rules">How to play <span>→</span></button>${installPrompt?'<button class="primary-btn" id="install-game">Install game ↓</button>':''}</div><p class="settings-hint">Character voice uses your device’s available speech voice. Bots, music and pass & play work offline in the installed game. Online duels need internet. Levels and avatars save on this device.</p>`);
   $('music-track').onchange=e=>chooseMusic(e.target.value);$('music-mode').onchange=e=>setMusicMode(e.target.value);$('music-next').onclick=nextMusic;
   for(const key of ['music','effects'])$(key+'-volume').oninput=e=>{audioSettings[key]=Number(e.target.value)/100;audioSettings.muted=false;$(key+'-value').textContent=e.target.value+'%';saveAudio();renderSetup();};
   $('setting-sound').onclick=()=>{$('sound').click();showSettings();};$('setting-cutins').onclick=()=>{audioSettings.cutins=!audioSettings.cutins;if(!audioSettings.cutins)$('cutin').hidden=true;saveAudio();showSettings();};$('setting-voice').onclick=()=>{audioSettings.voice=!audioSettings.voice;saveAudio();if(audioSettings.voice)speak(avatarLine(profile.avatar,'start'));else if('speechSynthesis'in window)speechSynthesis.cancel();showSettings();};

@@ -36,6 +36,8 @@ Object.assign(messages,{"Online room lobby":"在线房间大厅","ONLINE DUEL ·
 
 Object.assign(messages,{"SAME ROOM · REMATCH":"原房间 · 再战","Request rematch ↻":"请求再战 ↻","Accept rematch ↻":"接受再战 ↻","Cancel request":"取消请求","Decline":"拒绝","Rematch unavailable":"无法再战","You accepted. Waiting for your rival to accept.":"你已同意，正在等待对手接受。","Your rival wants a rematch. Accept to begin again in this room.":"对手希望再战。接受后将在原房间开始新对局。","You declined the rematch.":"你已拒绝再战。","Your rival declined the rematch.":"对手已拒绝再战。","The rematch request was cancelled.":"再战请求已取消。","Same room, same kingdoms. Both commanders must accept.":"房间与阵营保持不变，双方同意后才会重新开始。","Request a rematch here. Both commanders must agree before a new duel begins.":"可在此请求再战。双方同意后才会开始新对局。","Room lobby →":"房间大厅 →","Rival · Left":"对手 · 已离开","Your rival requested a rematch. Accept from Results or the room lobby.":"对手请求再战，可在结果界面或房间大厅接受。","A commander left this room. Create a new room to play again.":"有主公已离开此房间，请创建新房间继续对局。","Finish the current duel before requesting a rematch.":"请先结束当前对局，再请求再战。","This rematch belongs to an older duel. Refresh the room.":"此再战请求属于之前的对局，请刷新房间。","Choose a valid rematch action.":"请选择有效的再战操作。","This rematch request changed. Check the room again.":"再战请求已发生变化，请重新查看房间。","Your rival already requested a rematch. Accept or decline it.":"对手已发起再战请求，请接受或拒绝。","The last result is still saving. Please retry the rematch.":"上一局的结果仍在保存，请稍后重试再战。"});
 messages['Waiting for rival…']='等待对手同意……';
+Object.assign(messages,{"Sending…":"正在发送……","Castle awaiting server confirmation":"城池等待服务器确认","Choose a valid move request.":"请选择有效的落子请求。","This move belongs to an older duel. Refresh the room.":"此落子属于之前的对局，请刷新房间。","The server did not confirm the request. Reconnecting…":"服务器尚未确认请求，正在重连……"});
+Object.assign(messages,{"Connection is slow. Confirming your move…":"连接较慢，正在确认你的落子……","Connection interrupted. Retrying your move safely…":"连接中断，正在安全重试落子……","Your move is confirmed.":"你的落子已确认。"});
 const generals = [
   ['Liu Shan','劉禪','刘禅'],['Mi Zhu','糜竺','糜竺'],['Zhou Cang','周倉','周仓'],['Guan Ping','關平','关平'],['Ma Dai','馬岱','马岱'],['Huang Zhong','黃忠','黄忠'],['Wei Yan','魏延','魏延'],['Ma Chao','馬超','马超'],['Zhao Yun','趙雲','赵云'],['Zhuge Liang','諸葛亮','诸葛亮'],
   ['Cao Pi','曹丕','曹丕'],['Cao Hong','曹洪','曹洪'],['Li Dian','李典','李典'],['Yue Jin','樂進','乐进'],['Yu Jin','于禁','于禁'],['Xu Chu','許褚','许褚'],['Xiahou Yuan','夏侯淵','夏侯渊'],['Xiahou Dun','夏侯惇','夏侯惇'],['Zhang Liao','張遼','张辽'],['Cao Cao','曹操','曹操'],
@@ -50,6 +52,8 @@ export const htmlMessages = {
 };
 
 export const patterns = [
+  ['^Last server response: (\\d+) ms · D1 round trip: (\\d+) ms$','上次请求往返：$1 毫秒 · D1 往返：$2 毫秒'],
+  ['^Last server response: (\\d+) ms$','上次请求往返：$1 毫秒'],
   ['^Blue Lead (\\d+)$','蓝方领先 $1'],['^Orange Lead (\\d+)$','橙方领先 $1'],
   ['^I am (.+)\\. My banner is ready\\.$','我是$1，我的战旗已经备好。'],
   ['^[“"](.+)[”"]$','“$1”'],
