@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#142c29"><title>Little Kingdoms · Playable Tutorial</title><meta name="description" content="Learn by placing castles: build protected eyes, seal larger territory, defend real danger and capture your rival."><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/rulebook.css"><link rel="stylesheet" href="/tutorial.css"></head>
+<body class="tutorial-body">
+  <svg class="svg-defs" aria-hidden="true"><defs><symbol id="castle" viewBox="0 0 48 48"><path d="M8 40V22h32v18H8Z M4 23h40l-8-7H12L4 23Z M14 17V9h20v8 M10 10h28l-8-7H18l-8 7Z" fill="currentColor" stroke="var(--piece-line)" stroke-width="2" stroke-linejoin="round"/><path d="M20 40V29a4 4 0 0 1 8 0v11" fill="var(--piece-line)"/></symbol></defs></svg>
+  <div class="world-backdrop" aria-hidden="true"></div><div class="world-vignette" aria-hidden="true"></div>
+  <main class="tutorial-shell">
+    <header class="tutorial-header"><a href="/index.html" class="tutorial-back">‹ Return to game</a><strong>FIELD ACADEMY <small>LEARN BY PLAYING</small></strong><span id="course-progress">0 / 10</span></header>
+    <div class="tutorial-lesson-bar"><label class="sr-only" for="tutorial-lesson">Choose a lesson</label><select id="tutorial-lesson"></select><button id="tutorial-reset" title="Restart this lesson">↶ Restart</button></div>
+    <section id="tutorial-practice" class="tutorial-practice" aria-label="Guided practice board">
+      <div class="tutorial-coach"><div class="portrait" id="coach-avatar" role="img" aria-label="Guan Yu"></div><div><span class="eyebrow" id="tutorial-step-label">STEP 1</span><h1 id="tutorial-title">Place your first castle</h1><p id="tutorial-instruction"></p></div></div>
+      <div class="tutorial-boardspace"><div class="board-surround"><div class="board-coordinates" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span></div><div class="side-coordinates" aria-hidden="true"><span>9</span><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div><div class="board" id="tutorial-board" role="group" aria-label="9 by 9 tutorial board"></div><div class="board-inscription">練 習 · PRACTICE</div></div></div>
+      <div class="tutorial-status"><span id="tutorial-turn">SHU · BLUE</span><span id="tutorial-land">Shu 0 · Wei 0 land</span><span id="tutorial-liberties"></span></div>
+      <div class="tutorial-feedback" id="tutorial-feedback" role="status" aria-live="polite"></div>
+      <div class="tutorial-actions"><button class="secondary-btn" id="tutorial-pass">Pass →</button><button class="primary-btn" id="tutorial-deploy" disabled>Tap the glowing square</button><button class="primary-btn" id="tutorial-next" hidden>Continue →</button></div>
+      <div class="tutorial-legend"><span><b class="legend-danger">!</b> Legal capture danger</span><span><b class="legend-safe">✓</b> Protected</span><a id="tutorial-comic" href="/rulebook.html">Comic chapter ↗</a></div>
+    </section>
+    <section class="tutorial-complete" id="tutorial-complete" hidden><div class="portrait" id="graduate-avatar"></div><p class="eyebrow">A LITTLE WISER. A LITTLE BOLDER.</p><h1>Ready for a real rivalry.</h1><p id="tutorial-complete-text"></p><a class="primary-btn" href="/index.html">To the battlefield →</a><button class="secondary-btn" id="tutorial-again">Practice from the beginning</button><p class="practice-note">Practice uses separate boards. Your saved match, online room and match XP are unchanged.</p></section>
+    <footer class="tutorial-footer">PRACTICE ONLY · YOUR SAVED MATCH IS UNCHANGED</footer>
+  </main><script src="/client-config.js"></script><script type="module" src="/tutorial.js"></script>
+</body></html>

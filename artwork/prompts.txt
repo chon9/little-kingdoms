@@ -1,0 +1,18 @@
+Generator: built-in image_gen.imagegen, not the fallback CLI.
+
+Asset 1: public/assets/generals.webp
+Original source: artwork/source/generals.png
+Prompt:
+Use case: stylized-concept. Asset type: a polished mobile strategy board game's character portrait sprite atlas. Create exactly 20 DISTINCT Q-version chibi Three Kingdoms generals arranged in a PERFECT REGULAR 5 column by 4 row grid. Each tile same square size. Overall image landscape 5:4 ratio, 2000x1600 if possible. Solid warm ivory background in every tile, no grid lines, no text, no letters, no watermarks. Each character is an adorable exquisitely drawn collectible game character with big expressive eyes, oversized head, small body visible chest-up, bold clean outlines, softly painted detailed silk and gilded armor, very high production value. ALL characters fully contained within each cell with 12% padding, consistent scale. First two rows Shu generals in jade-teal, blue and gold costumes: row 1 Liu Shan young round crown; Mi Zhu gentle scholar; Zhou Cang dark beard headband; Guan Ping young green helmet; Ma Dai youthful pointed helmet. Row 2 Huang Zhong old white beard gold helmet; Wei Yan red face fierce helmet; Ma Chao white and blue armor horsecrest; Zhao Yun handsome silver helmet blue tassel; Zhuge Liang white feather fan tall black scholar hat jade robes. Last two rows Wei generals in burnt orange, burgundy and gold costumes: row 3 Cao Pi youthful crown; Cao Hong square face gold cap; Li Dian orange helmet; Yue Jin red crested helmet; Yu Jin stern dark cap. Row 4 Xu Chu round powerful cheeks gold armor; Xiahou Yuan red plumed helmet; Xiahou Dun black eye patch orange armor; Zhang Liao purple gold helmet; Cao Cao mature ambitious man black beard golden tall crown red cloak. Each portrait with a self assured friendly battle-ready expression. Elegant hand drawn cozy anime game art, no 3D, no photorealism. Beautiful restrained ink texture.
+
+Asset 2: public/assets/generals-shock.webp
+Original source: artwork/source/generals-shock.png
+Reference: original portrait atlas, Asset 1.
+Prompt:
+Edit this exact 5 by 4 grid of 20 chibi Three Kingdoms general portrait sprites for a game emotion reaction sheet. Keep every character identity, their positions, hats, costumes, background, individual tile positions and sizes exactly unchanged. Change ONLY all twenty facial expressions to comically SHOCKED and WORRIED: very wide round eyes, tiny surprised open mouth, a little anime sweat drop near their temple, raised eyebrows, some pale blue stress marks. Make it adorable and clear at small mobile portrait sizes. No text, no lines, same regular 5 columns 4 rows exact layout.
+
+Asset 3: public/assets/generals-sad.webp
+Original source: artwork/source/generals-sad.png
+Reference: original portrait atlas, Asset 1.
+Prompt:
+Edit this exact 5 by 4 grid of 20 chibi Three Kingdoms general portrait sprites for a game emotion reaction sheet. Keep every character identity, positions, hats, costumes, background, individual tile positions and sizes exactly unchanged. Change ONLY all twenty facial expressions to adorably SAD and DEFEATED: shiny watery teary downturned eyes, tiny pout or quivering frown, drooping eyebrows, single tears on cheek. Make readable at small mobile sizes. No text, no lines, same regular 5 columns and 4 rows exact layout. Retain exact original framing.

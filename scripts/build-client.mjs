@@ -1,0 +1,10 @@
+import { cp,mkdir,copyFile,writeFile,readFile } from 'node:fs/promises';
+const directory='clients/www';
+await mkdir(directory,{recursive:true});await cp('public',directory,{recursive:true});
+for(const name of ['engine','ai'])await copyFile(`shared/${name}.js`,`${directory}/${name}.js`);
+const origin='https://shu-wei-kingdoms.alexchon911.chatgpt.site';
+await writeFile(directory+'/client-config.js','window.KINGDOMS_API_BASE = '+JSON.stringify(origin)+';\n');
+const html=await readFile(directory+'/index.html','utf8');
+const csp=`default-src 'self'; script-src 'self'; worker-src 'self'; connect-src 'self' ${origin}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'self'`;
+await writeFile(directory+'/index.html',html.replace('<head>','<head>\n  <meta http-equiv="Content-Security-Policy" content="'+csp+'">'));
+console.log('Built bundled offline client assets in clients/www; online PvP connects to '+origin);

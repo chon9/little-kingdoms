@@ -1,0 +1,16 @@
+{
+  "name":"little-kingdoms-client",
+  "version":"2.2.0",
+  "private":true,
+  "description":"Little Kingdoms offline-capable Android and Windows clients with shared online PvP.",
+  "author":"Little Kingdoms",
+  "main":"desktop/main.cjs",
+  "scripts":{
+    "desktop":"electron .",
+    "android:add":"cap add android",
+    "android:sync":"cap sync android",
+    "android:open":"cap open android"
+  },
+  "dependencies":{"@capacitor/core":"8.5.3","@capacitor/android":"8.5.3"},
+  "devDependencies":{"@capacitor/cli":"8.5.3","electron":"44.7.2"}
+}

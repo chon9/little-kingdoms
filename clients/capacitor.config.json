@@ -1,0 +1,9 @@
+{
+  "appId":"game.littlekingdoms.shuwei",
+  "appName":"Little Kingdoms",
+  "webDir":"www",
+  "backgroundColor":"#142c29",
+  "server":{"hostname":"localhost","androidScheme":"https"},
+  "android":{"allowMixedContent":false},
+  "ios":{"contentInset":"always"}
+}
