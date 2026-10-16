@@ -39,6 +39,20 @@ try{
     await until('window.kingdomsDesktop.getDisplay().then(s=>s.fullscreen)');
     await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
     await until('window.kingdomsDesktop.getDisplay().then(s=>!s.fullscreen)');
+    if(process.argv.includes('--steam')){
+      await evaluate('localStorage.clear();sessionStorage.clear()');await send('Page.reload',{ignoreCache:true});await until('document.querySelectorAll(".cell").length===81');
+      assert.equal(await evaluate('Object.isFrozen(window.kingdomsSteam)'),true,'Steam bridge is bounded and frozen');
+      const steam=await evaluate('window.kingdomsSteam.init()');
+      if(steam.ok){
+        assert.equal(steam.appId,480);assert.match(steam.id,/^\d{17,20}$/);
+        await click('#mode-steam');await click('#steam-connect');await until('!document.querySelector("#steam-create").disabled');await click('#steam-create');await until('document.body.dataset.screen==="room"',30000);
+        assert.match(await evaluate('document.querySelector("#lobby-room-code").textContent'),/^\d{17,20}$/);assert.equal(await evaluate('document.querySelector("#room-count").textContent'),'1 / 2');assert.equal(await evaluate('document.querySelector("#battle-screen").hidden'),true);
+        await click('#room-leave');await until('document.body.dataset.screen==="lobby"');await click('#mode-bot');
+      }
+      else assert.match(steam.error,/Steam/,'a missing Steam session fails clearly without breaking offline or crossplay');
+      const invalid=await evaluate('window.kingdomsSteam.send("not-a-steam-id","{}")');assert.equal(invalid.ok,false);
+      console.log('Native Steam bridge checked: '+(steam.ok?'official runtime initialized as AppID 480, created a real friends-only lobby, delivered callbacks, waited for a rival and left cleanly':'Steam unavailable; graceful connection error and crossplay fallback')+'. Two-account Steam networking remains unverified here.');
+    }
   }
   await evaluate('localStorage.clear();sessionStorage.clear()');
   await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});

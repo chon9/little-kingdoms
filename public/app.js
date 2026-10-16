@@ -7,6 +7,7 @@ import { localize } from '/i18n.js';
 import { castleMarkup, cosmeticFor, pullsAvailable } from '/cosmetics.js';
 import { openCollection } from '/collection.js';
 import { openRankings, ensureCommander, syncCommander, commanderIdentity } from '/rankings.js';
+import { SteamSession } from '/steam-session.js';
 
 const $ = id => document.getElementById(id);
 const API_BASE = window.KINGDOMS_API_BASE || '';
@@ -40,9 +41,18 @@ let config = { mode: 'bot', level: 5, humanColor: 1 }, state = newGame(), starte
 let selected = null, snapshots = [], thinking = false, pending = false, botWorker = null, botTimer = null, emotionTimer = null, roomTimer = null;
 let room = null, roomError = '', emotion = '', toastTimer, searchInfo = null, cutinTimer, cutinCooldown=0;
 let roomRead=null,roomReadEpoch=0,roomFailures=0,pendingAction=null,networkSample=null;
+let steamSession=null,steamIdentity=null,steamBusy=false;
+const isSteam=()=>config.mode==='online'&&config.transport==='steam';
+const steamBridge=window.kingdomsSteam;
 let profile=normalizeProfile(null);
 try{profile=normalizeProfile(JSON.parse(localStorage.getItem(PROFILE_KEY)));}catch{}
 const cells = [];
+if(steamBridge){
+  const tab=document.createElement('button');tab.id='mode-steam';tab.innerHTML='<svg><use href="#swords"/></svg><span>Steam PvP<small>SPACEWAR TEST</small></span>';document.querySelector('.mode-tabs').append(tab);
+  const controls=document.createElement('div');controls.id='steam-controls';controls.hidden=true;
+  controls.innerHTML='<p class="steam-test-label">SPACEWAR · APPID 480 · CASUAL TEST</p><p class="online-start-note">Both players need this Windows test build and Steam running on separate accounts. Add each other as Steam friends. Moves travel through Steam. Online duel remains available for browser crossplay.</p><p id="steam-status" role="status">Connect Steam to begin.</p><button class="secondary-btn" id="steam-connect">Connect Steam</button><div class="online-factions" role="group" aria-label="Steam host kingdom"><button type="button" id="steam-blue">蜀 · Blue</button><button type="button" id="steam-orange">魏 · Orange</button></div><button class="primary-btn" id="steam-create">Host Steam duel ＋</button><form id="steam-join-form"><label for="steam-lobby-id">Friend’s Steam lobby ID</label><div class="join-row"><input id="steam-lobby-id" inputmode="numeric" pattern="[0-9]{17,20}" minlength="17" maxlength="20" placeholder="Paste the complete lobby ID" autocomplete="off" required><button type="submit" class="secondary-btn">Join →</button></div></form><p class="online-start-note">Share the lobby ID in chat, then join here. Eligible Steam test duels earn 40 local XP and do not count toward verified online wins.</p>';
+  $('pvp-setup').append(controls);
+}
 try {
   const saved = JSON.parse(localStorage.getItem('little-kingdoms-save') || 'null');
   if (saved?.schema === 1 && ['bot','local'].includes(saved.config.mode) && Array.isArray(saved.state.board) && saved.state.board.length === 81 && saved.state.board[40] === 3) {
@@ -97,7 +107,7 @@ function portrait(el, color, level, mood = '') {
 }
 function general(color, level = config.level) { return (color === 1 ? SHU : WEI)[level - 1]; }
 function colorName(c) { return c === 1 ? 'Shu' : 'Wei'; }
-function ownTurn() { return started && !state.winner && !thinking && !pending && (config.mode === 'local' || (state.turn === config.humanColor && (config.mode !== 'online' || room?.ready))); }
+function ownTurn() { return started && !state.winner && !thinking && !pending && (!isSteam()||room?.connected) && (config.mode === 'local' || (state.turn === config.humanColor && (config.mode !== 'online' || room?.ready))); }
 
 for(let level=1;level<=10;level++){
   const button=document.createElement('button');button.className='level-node';button.type='button';button.textContent=level;button.dataset.level=level;button.setAttribute('aria-label',`Level ${level} · ${TITLES[level-1]}`);
@@ -116,10 +126,12 @@ for (let i=0;i<81;i++) {
 
 function renderSetup() {
   renderProfile();
-  for (const m of ['bot','local','online']) { $('mode-'+m).classList.toggle('selected',config.mode===m); $('mode-'+m).disabled=pending; }
-  $('bot-setup').hidden=config.mode!=='bot'; $('pvp-setup').hidden=config.mode==='bot'; $('online-controls').hidden=config.mode!=='online';
+  for (const m of ['bot','local','online','steam']) { if($('mode-'+m)){$('mode-'+m).classList.toggle('selected',m==='steam'?isSteam():config.mode===m&&!isSteam()); $('mode-'+m).disabled=pending;} }
+  $('bot-setup').hidden=config.mode!=='bot'; $('pvp-setup').hidden=config.mode==='bot'; $('online-controls').hidden=config.mode!=='online'||isSteam();
+  if(steamBridge){$('steam-controls').hidden=!isSteam();for(const id of ['steam-connect','steam-create','steam-lobby-id','steam-blue','steam-orange'])$(id).disabled=steamBusy||!!room||id!=='steam-connect'&&!steamIdentity;$('steam-join-form').querySelector('button').disabled=steamBusy||!!room||!steamIdentity;$('steam-blue').setAttribute('aria-pressed',String(config.humanColor===1));$('steam-orange').setAttribute('aria-pressed',String(config.humanColor===2));$('steam-status').replaceChildren();if(steamIdentity){$('steam-status').append('Steam connected · ');const name=document.createElement('span');name.dataset.userContent='';name.textContent=steamIdentity.name;$('steam-status').append(name);}else $('steam-status').textContent='Connect Steam to begin.';}
   $('pvp-title').textContent=config.mode==='online'?'Rivals, from anywhere.':'A friendly rivalry.';
   $('pvp-desc').textContent=config.mode==='online'?'Create a private room or join a friend. Share the code and take your seats.':'Two kingdoms, one screen. Take turns and see who rules the riverlands.';
+  if(isSteam()){$('pvp-title').textContent='Steam battlefield';$('pvp-desc').textContent='A direct duel through Steam networking.';}
   const c=3-config.humanColor,g=general(c);
   portrait($('hero-portrait'),c,config.level,emotion);
   $('hero-portrait').classList.toggle('shock',emotion==='shock'); $('hero-portrait').classList.toggle('sad',emotion==='sad');
@@ -142,6 +154,7 @@ function renderSetup() {
   if(emotion&&config.mode==='bot') {const label=document.createElement('span');label.className='emotion-label';label.textContent=emotion==='shock'?'Wait… that was your plan?!':'My beautiful kingdom…';document.querySelector('.opponent-art-wrap').append(label);}
   $('sound').classList.toggle('on',!audioSettings.muted); $('sound').setAttribute('aria-label',audioSettings.muted?'Unmute music and effects':'Mute music and effects');
   $('battle-mode').textContent=config.mode==='bot'?`GENERAL CHALLENGE · LV ${config.level}`:config.mode==='local'?'PASS & PLAY':room?'ONLINE DUEL · '+room.code:'ONLINE DUEL';
+  if(isSteam())$('battle-mode').textContent='STEAM PVP · SPACEWAR TEST';
   $('battle-emotion').hidden=!emotion||config.mode!=='bot';$('battle-emotion').textContent=emotion==='shock'?'Wait… that was your plan?!':'My beautiful kingdom…';
 }
 
@@ -185,6 +198,7 @@ function render(pop = false) {
   let title='Your kingdom awaits',subtitle='Begin a battle, then choose your first square.';
   if(started) {
     if(state.winner) {title=`${colorName(state.winner)} rules the riverlands`;subtitle=state.reason==='territory'?'The land has been counted. A little history is made.':state.reason==='resignation'?'A graceful retreat. Another battle awaits.':'One capture. A kingdom won.';}
+    else if(isSteam()&&roomError){title='Steam is reconnecting…';subtitle=roomError;}
     else if(config.mode==='online'&&!room?.ready) {title='A seat for your rival';subtitle='Share your room code to begin the battle.';}
     else if(thinking) {title=`${general(state.turn)[0]} is plotting…`;subtitle='A quiet moment before the next move.';}
     else if(ownTurn()) {title=config.mode==='local'?`${colorName(state.turn)}’s turn`:'Your move, commander';subtitle=selected!==null?`Deploy at ${positionName(selected)}, or choose another square.`:state.passes?'Your rival passed. Pass to finish, or keep building.':'Tap a square, then deploy your castle.';}
@@ -200,7 +214,7 @@ function render(pop = false) {
   $('battle-restart').hidden=!started||(config.mode==='online'&&!ended);$('battle-restart').disabled=pending;$('battle-restart').textContent=ended?(config.mode==='online'?'New duel ↗':'Play again ↻'):'Restart ↻';
   $('battle-leave').hidden=config.mode!=='online'||!room;$('battle-leave').disabled=pending;
   $('battle-back').querySelector('span').textContent=room?'Room':'Lobby';
-  $('resign').disabled=!started||!!state.winner||pending||(config.mode==='online'&&!room?.ready);
+  $('resign').disabled=!started||!!state.winner||pending||(config.mode==='online'&&!room?.ready)||(isSteam()&&!room?.connected);
   if(pending&&pendingAction!==null)$('deploy').textContent='Sending…';
   renderRematch();localize();
 }
@@ -228,6 +242,7 @@ function reactToPressure(before, after) {
 
 async function act(action) {
   if(!ownTurn()&&action!=='resign')return;
+  if(isSteam()){await steamCommand(()=>steamSession.act(action),Number.isInteger(action)?action:null);return;}
   if(config.mode==='online') {
     if(!room?.ready||state.winner||pending)return;
     const code=room.code,token=room.token,commandPly=state.ply,command={action,version:room.version,matchId:state.matchId,moveId:crypto.randomUUID()};
@@ -293,8 +308,8 @@ function confirmChange(callback, title='A new chapter?') {
   $('cancel-change').onclick=()=>$('modal').close();$('confirm-change').onclick=()=>{$('modal').close();callback();};
 }
 function switchMode(mode) {
-  if(config.mode===mode)return;
-  confirmChange(()=>{stopBot();resetEmotion();stopRoom();config.mode=mode;started=false;screen='lobby';state=newGame();snapshots=[];selected=null;persist();render();});
+  if(mode==='steam'?isSteam():config.mode===mode&&!isSteam())return;
+  confirmChange(()=>{stopBot();resetEmotion();stopRoom();config.mode=mode==='steam'?'online':mode;config.transport=mode==='steam'?'steam':'https';started=false;screen='lobby';state=newGame();snapshots=[];selected=null;persist();render();});
 }
 
 function showRules(page=0) {
@@ -315,15 +330,55 @@ function showGenerals(){
 function showResult() {
   tone('win');
   try{profile=normalizeProfile(JSON.parse(localStorage.getItem(PROFILE_KEY))||profile);}catch{}
-  const reward=awardMatch(profile,{state,mode:config.mode,humanColor:config.humanColor,botLevel:config.level});profile=reward.profile;saveProfile();renderProfile();
-  syncProgress();
+  const reward=awardMatch(profile,{state:state.steamAborted?{...state,winner:null}:state,mode:isSteam()?'local':config.mode,humanColor:config.humanColor,botLevel:config.level});profile=reward.profile;saveProfile();renderProfile();
+  if(!isSteam())syncProgress();
   const s=scoredWinner(state),win=state.winner;
   if(config.mode==='bot'&&win===config.humanColor){emotion='sad';clearTimeout(emotionTimer);emotionTimer=setTimeout(()=>{emotion='';render();},6000);render();}
-  const reason=state.reason==='capture'?'An enemy group has no liberties. One capture, one kingdom.':state.reason==='simultaneous'?'Both sides lost their final liberties. The simultaneous capture rule awards the battle to Wei.':state.reason==='resignation'?'The opposing commander has laid down their banner.':'The final territories are sealed. The land has spoken.';
-  modal(`<div class="result-view ${['capture','simultaneous'].includes(state.reason)?'capture-result':''}" data-winner="${win===1?'blue':'orange'}">${['capture','simultaneous'].includes(state.reason)?`<div class="capture-callout" role="status"><span class="capture-seal" aria-hidden="true">斬</span><div><small>${state.reason==='simultaneous'?'SIMULTANEOUS CAPTURE':'DECISIVE STRIKE'}</small><strong>CASTLE FALLS!</strong><b>${win===1?'BLUE WINS BY CAPTURE':'ORANGE WINS BY CAPTURE'}</b></div></div>`:''}<div class="result-heading"><div id="result-portrait" class="portrait"></div><div><p class="eyebrow">${config.mode==='local'?'BATTLE COMPLETE':win===config.humanColor?'VICTORY':'ANOTHER BATTLE AWAITS'}</p><h2>${colorName(win)} rules the riverlands.</h2></div></div><div class="result-body" tabindex="0" aria-label="Battle results and rewards"><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}${config.mode==='online'?'<div id="result-rematch"></div>':''}<button class="resume-btn" id="result-collection">View avatar collection →</button></div><div class="result-actions"><button class="primary-btn" id="play-again">${config.mode==='online'?'Request rematch ↻':'Play again ↻'}</button><button class="secondary-btn" id="result-lobby">${room?'Room lobby →':'Battle lobby →'}</button></div></div>`);
+  const reason=state.steamAborted?'This interrupted Steam test duel awards no XP or verified online result.':state.reason==='capture'?'An enemy group has no liberties. One capture, one kingdom.':state.reason==='simultaneous'?'Both sides lost their final liberties. The simultaneous capture rule awards the battle to Wei.':state.reason==='resignation'?'The opposing commander has laid down their banner.':'The final territories are sealed. The land has spoken.';
+  modal(`<div class="result-view ${['capture','simultaneous'].includes(state.reason)?'capture-result':''}" data-winner="${win===1?'blue':'orange'}">${['capture','simultaneous'].includes(state.reason)?`<div class="capture-callout" role="status"><span class="capture-seal" aria-hidden="true">斬</span><div><small>${state.reason==='simultaneous'?'SIMULTANEOUS CAPTURE':'DECISIVE STRIKE'}</small><strong>CASTLE FALLS!</strong><b>${win===1?'BLUE WINS BY CAPTURE':'ORANGE WINS BY CAPTURE'}</b></div></div>`:''}<div class="result-heading"><div id="result-portrait" class="portrait"></div><div><p class="eyebrow">${config.mode==='local'?'BATTLE COMPLETE':win===config.humanColor?'VICTORY':'ANOTHER BATTLE AWAITS'}</p><h2>${colorName(win)} rules the riverlands.</h2></div></div><div class="result-body" tabindex="0" aria-label="Battle results and rewards"><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${state.steamAborted?'Interrupted Steam duel · 0 XP':reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}${config.mode==='online'?'<div id="result-rematch"></div>':''}<button class="resume-btn" id="result-collection">View avatar collection →</button></div><div class="result-actions"><button class="primary-btn" id="play-again">${config.mode==='online'?'Request rematch ↻':'Play again ↻'}</button><button class="secondary-btn" id="result-lobby">${room?'Room lobby →':'Battle lobby →'}</button></div></div>`);
   if(config.mode==='bot'&&win!==config.humanColor)portrait($('result-portrait'),win,config.level);else avatarPortrait($('result-portrait'),avatarFor(win));
   $('result-collection').onclick=showGenerals;$('play-again').onclick=replayBattle;$('result-lobby').onclick=()=>{$('modal').close();screen=room?'room':'lobby';render();};renderRematch();$('play-again').focus({preventScroll:true});
   if(reward.level>reward.previousLevel){const bonus=document.createElement('button');bonus.className='result-pulls';bonus.textContent=`✦ +${reward.level-reward.previousLevel} level-up pull${reward.level-reward.previousLevel===1?'':'s'} · Open Treasury →`;bonus.onclick=showTreasury;$('match-reward').append(bonus);}
+}
+
+async function connectSteam(){
+  if(steamBusy)return;steamBusy=true;render();
+  try{const result=await steamBridge.init();if(!result?.ok)throw new Error(result?.error||'Could not connect to Steam.');steamIdentity=result;toast('Steam connected. Host a duel or join your friend.');}
+  catch(error){toast(error.message);}finally{steamBusy=false;render();}
+}
+async function openSteamRoom(lobbyId){
+  if(!isSteam()||room||steamBusy||!steamIdentity)return;
+  steamBusy=true;render();
+  try{
+    if(steamSession)await steamSession.leave();
+    const session=new SteamSession({bridge:steamBridge,identity:steamIdentity,profile:{avatar:profile.avatar,castle:profile.cosmetics.castle},onUpdate:data=>{
+      if(steamSession!==session||!isSteam())return;
+      const before=state,wasReady=!!room?.ready,changed=!room||room.version!==data.version||room.connected!==data.connected||roomError!==data.error||JSON.stringify(state.roomDeparted)!==JSON.stringify(data.state.roomDeparted);
+      steamBusy=false;room={...data,transport:'steam'};roomError=data.error;config.humanColor=data.color;state=data.state;started=data.ready;
+      const restarted=rematchStarted(before);if(!wasReady)screen=data.ready?'battle':'room';
+      if(changed||restarted){selected=null;render(true);if(!wasReady&&data.ready||restarted)playerCutin(config.humanColor,'start',true);else if(state.winner&&!before.winner){showResult();if(state.steamAborted)toast('Steam duel interrupted. No XP or verified online result was awarded.');}else if(state.ply!==before.ply)reactPlayer(before,state);}
+    },onError:message=>{if(steamSession===session){steamBusy=false;toast(message);render();}}});
+    steamSession=session;if(lobbyId)await session.join(lobbyId);else await session.create(config.humanColor);
+  }catch(error){steamBusy=false;if(steamSession){await steamSession.leave();steamSession=null;}toast(error.message);render();}
+}
+async function steamCommand(command,index=null){
+  if(!steamSession||pending||!room?.connected)return;
+  pending=true;pendingAction=index;render();
+  try{await command();selected=null;tone(index===null?'pass':'place');}
+  catch(error){toast(error.message);}
+  finally{pending=false;pendingAction=null;render();}
+}
+async function requestLeaveSteam(onLeft){
+  const leave=async()=>{pending=true;render();const session=steamSession;steamSession=null;await session?.leave();pending=false;$('modal').close();resetOnlineRoom();if(onLeft!==resetOnlineRoom)onLeft();toast('You left the Steam lobby.');};
+  if(state.winner||!room.ready){await leave();return;}
+  modal('<p class="eyebrow">LEAVE STEAM DUEL</p><h2>Resign and leave?</h2><p>Leaving ends this casual Steam duel. Your rival can leave and host another room.</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-steam-leave">Keep playing</button><button class="primary-btn" id="confirm-steam-leave">Resign & leave</button></div>');
+  $('cancel-steam-leave').onclick=()=>$('modal').close();$('confirm-steam-leave').onclick=leave;
+}
+async function showSteamFriends(){
+  const root=$('steam-friend-list');root.replaceChildren();
+  try{const result=await steamBridge.friends();if(!result.ok)throw new Error(result.error);if(!result.friends.length){root.textContent='No Steam friends online. Share the lobby ID instead.';localize(root);return;}
+    for(const friend of result.friends){const button=document.createElement('button');button.className='secondary-btn';button.textContent=friend.name;button.dataset.userContent='';button.onclick=async()=>{try{const sent=await steamBridge.invite(friend.id);if(!sent.ok)throw new Error(sent.error);toast('Steam invite sent. Also send your friend the lobby ID to enter in this build.');}catch(error){toast(error.message);}};root.append(button);}
+  }catch(error){toast(error.message);}
 }
 
 async function api(path,body,token,{signal}={}) {
@@ -365,6 +420,7 @@ function rematchStarted(before){
 }
 async function submitRematch(action){
   if(!room||!state.winner||pending||state.roomDeparted?.length)return;
+  if(isSteam()){await steamCommand(()=>steamSession.rematch(action));return;}
   const code=room.code,matchId=state.matchId,offerId=state.rematch?.id;pending=true;render();
   try{
     const data=await api(`/api/rooms/${code}/rematch`,{action,matchId,offerId,version:room.version},room.token);
@@ -380,10 +436,14 @@ async function leaveFinishedRoom(onLeft){
   catch(e){pending=false;await pollRoom();toast(e.message);}
   finally{pending=false;render();}
 }
-function storeRoom() {try{const saved=JSON.stringify({...room,config});sessionStorage.setItem('little-kingdoms-room',saved);if(API_BASE)localStorage.setItem('little-kingdoms-room',saved);}catch{}}
+function storeRoom() {if(isSteam())return;try{const saved=JSON.stringify({...room,config});sessionStorage.setItem('little-kingdoms-room',saved);if(API_BASE)localStorage.setItem('little-kingdoms-room',saved);}catch{}}
 function renderRoomLobby(){
   if(!room)return;
   $('lobby-room-code').textContent=room.code;$('room-count').textContent=room.ready?'2 / 2':'1 / 2';
+  $('room-screen').classList.toggle('steam-room',isSteam());
+  document.querySelector('.room-hall-header .eyebrow').textContent=isSteam()?'STEAM PVP · SPACEWAR TEST':'ONLINE DUEL · PRIVATE ROOM';
+  document.querySelector('.room-invitation>.eyebrow').textContent=isSteam()?'STEAM LOBBY ID':'ROOM CODE';
+  document.querySelector('.room-invitation>p').textContent=isSteam()?'Send this ID to your friend. Join it from Steam PvP in this Windows build.':'Send this code to your rival.';
   for(const c of [1,2]){
     const prefix=c===1?'blue':'orange',player=state.players?.[c],own=c===config.humanColor,present=!!player;
     $('room-'+prefix+'-seat').classList.toggle('empty',!present);
@@ -393,15 +453,21 @@ function renderRoomLobby(){
     $('room-'+prefix+'-role').textContent=state.roomDeparted?.includes(c)?'Rival · Left':!present?'Waiting for rival':own?'You · Connected':'Rival · Connected';
   }
   $('room-wait-title').textContent=roomError?'Reconnecting…':room.version<0?'Reconnecting to your room…':!room.ready?'Waiting for your rival…':state.winner?'Duel complete':'Duel in progress';
+  if(isSteam()&&roomError)$('room-wait-title').textContent=state.roomDeparted?.length?'Steam rival left':'Steam is reconnecting…';
   $('room-wait-description').textContent=roomError||(!room.ready?'The battle starts automatically when your rival joins.':state.winner?'Request a rematch here. Both commanders must agree before a new duel begins.':'Both commanders are here. Return to the battlefield to continue.');
   $('room-enter-battle').hidden=!room.ready;$('room-enter-battle').textContent=state.winner?'View finished battle →':'Return to battlefield →';
   $('room-leave').textContent=pending?'Leaving room…':!room.ready?'Close room & leave':'Leave room';
   $('room-leave').disabled=pending||room.version<0;
   $('room-screen').classList.toggle('room-connected',room.ready);renderRematch();
+  if(isSteam()){
+    let invites=$('steam-invites');if(!invites){invites=document.createElement('div');invites.id='steam-invites';invites.className='steam-invites';invites.innerHTML='<button class="secondary-btn" id="steam-friends">Invite a Steam friend</button><p class="online-start-note">The lobby ID works even when the Steam overlay is unavailable.</p><div id="steam-friend-list"></div>';document.querySelector('.room-hall-actions').before(invites);$('steam-friends').onclick=showSteamFriends;}
+    invites.hidden=room.ready;
+  }else if($('steam-invites'))$('steam-invites').hidden=true;
 }
 function resetOnlineRoom(){stopRoom();stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;state=newGame();started=false;selected=null;snapshots=[];screen='lobby';render();}
 function requestLeaveRoom(onLeft=resetOnlineRoom){
   if(!room||pending)return;
+  if(isSteam()){requestLeaveSteam(onLeft);return;}
   if(state.winner){leaveFinishedRoom(onLeft);return;}
   const live=room.ready,{code,token,version}=room;
   modal(`<p class="eyebrow">${live?'LEAVE ONLINE DUEL':'CLOSE WAITING ROOM'}</p><h2>${live?'Resign and leave?':'Close this room?'}</h2><p>${live?'Leaving resigns this duel and awards your rival the win.':'Your invitation will stop working. No match or result will be recorded.'}</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-leave-room">Stay in room</button><button class="primary-btn" id="confirm-leave-room">${live?'Resign & leave':'Close room & leave'}</button></div>`);
@@ -419,13 +485,14 @@ function requestLeaveRoom(onLeft=resetOnlineRoom){
     finally{pending=false;render();}
   };
 }
-function stopRoom(){cancelRoomRead();roomFailures=0;roomError='';clearTimeout(roomTimer);roomTimer=null;room=null;try{localStorage.removeItem('little-kingdoms-room');sessionStorage.removeItem('little-kingdoms-room');}catch{}history.replaceState(null,'',location.pathname);}
+function stopRoom(){if(steamSession){const session=steamSession;steamSession=null;session.leave();}steamBusy=false;cancelRoomRead();roomFailures=0;roomError='';clearTimeout(roomTimer);roomTimer=null;room=null;try{localStorage.removeItem('little-kingdoms-room');sessionStorage.removeItem('little-kingdoms-room');}catch{}history.replaceState(null,'',location.pathname);}
 function connectRoom(data) {
   stopBot();resetEmotion();config={mode:'online',humanColor:data.color,level:data.level};
   cancelRoomRead();roomFailures=0;roomError='';room={code:data.code,token:data.token,version:data.version,ready:data.ready,hostColor:data.hostColor};state=data.state;started=data.ready;screen=data.ready?'battle':'room';snapshots=[];selected=null;
   history.replaceState(null,'',location.pathname+'?room='+room.code);storeRoom();render();if(data.ready)playerCutin(config.humanColor,'start',true);clearTimeout(roomTimer);roomTimer=setTimeout(pollRoom,1400);
 }
 async function pollRoom(){
+  if(isSteam())return;
   if(!room||document.hidden)return;
   if(pending){scheduleRoomPoll(500);return;}if(roomRead)return;
   clearTimeout(roomTimer);const code=room.code,startedAt=performance.now(),read={controller:new AbortController(),epoch:roomReadEpoch};roomRead=read;
@@ -446,6 +513,12 @@ $('difficulty').addEventListener('input',()=>{const l=Number($('difficulty').val
 $('difficulty').addEventListener('change',()=>{const l=Number($('difficulty').value);if(l===config.level)return;renderSetup();confirmChange(()=>{stopBot();resetEmotion();config.level=l;state=newGame();started=false;screen='lobby';snapshots=[];selected=null;persist();render();});});
 for(const [id,c]of[['choose-shu',1],['choose-wei',2]])$(id).onclick=()=>{if(config.humanColor===c)return;confirmChange(()=>{stopBot();resetEmotion();config.humanColor=c;state=newGame();started=false;screen='lobby';snapshots=[];persist();render();});};
 for(const m of['bot','local','online'])$('mode-'+m).onclick=()=>switchMode(m);
+if(steamBridge){
+  $('mode-steam').onclick=()=>switchMode('steam');$('steam-connect').onclick=connectSteam;
+  for(const [id,color]of[['steam-blue',1],['steam-orange',2]])$(id).onclick=()=>{if(!room&&!steamBusy){config.humanColor=color;render();}};
+  $('steam-create').onclick=()=>openSteamRoom();$('steam-join-form').onsubmit=e=>{e.preventDefault();openSteamRoom($('steam-lobby-id').value.trim());};
+  steamBridge.on(event=>{if(event.type!=='invite'||!/^\d{17,20}$/.test(event.lobby))return;modal('<p class="eyebrow">STEAM INVITATION</p><h2>Join your friend’s Steam duel?</h2><div class="dialog-actions"><button class="secondary-btn" id="steam-invite-cancel">Keep playing</button><button class="primary-btn" id="steam-invite-open">Open Steam invitation →</button></div>');$('steam-invite-cancel').onclick=()=>$('modal').close();$('steam-invite-open').onclick=()=>{$('modal').close();confirmChange(()=>{stopRoom();stopBot();config.mode='online';config.transport='steam';started=false;screen='lobby';render();$('steam-lobby-id').value=event.lobby;openSteamRoom(event.lobby);});};});
+}
 $('begin').onclick=()=>confirmChange(startBattle);
 $('lead-ribbon').onclick=()=>toast($('lead-ribbon').title);
 $('deploy').onclick=()=>{if(state.winner){replayBattle();return;}if(!started){startBattle();return;}if(selected!==null)act(selected);};$('pass').onclick=()=>{if(state.winner){screen=room?'room':'lobby';render();}else act('pass');};$('battle-restart').onclick=replayBattle;
@@ -468,7 +541,7 @@ for(const id of['home','battle-back'])$(id).onclick=()=>{screen=room?'room':'lob
 $('resume').onclick=()=>{screen='battle';render();};$('return-to-room').onclick=()=>{screen='room';render();};
 $('fullscreen').onclick=async()=>{try{if(window.kingdomsDesktop){await window.kingdomsDesktop.toggleFullscreen();return;}if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{toast('Fullscreen unavailable on this display.');}};
 function showSettings(){
-  modal(`<p class="eyebrow">YOUR COMMAND TENT</p><h2>${screen==='battle'?'Battle menu':'Settings'}</h2><div class="settings-language-slot"></div>${networkSample&&room?`<p class="network-diagnostics">Last server response: ${networkSample.roundTrip} ms${networkSample.database!==null?` · D1 round trip: ${networkSample.database} ms`:""}</p>`:""}<div class="audio-settings"><label>Music volume <output id="music-value">${Math.round(audioSettings.music*100)}%</output><input id="music-volume" type="range" min="0" max="100" value="${audioSettings.music*100}"></label><label>Battle effects <output id="effects-value">${Math.round(audioSettings.effects*100)}%</output><input id="effects-volume" type="range" min="0" max="100" value="${audioSettings.effects*100}"></label><div class="music-library"><label for="music-track">Soundtrack</label><select id="music-track">${MUSIC_TRACKS.map(t=>'<option value="'+t.id+'"'+(t.id===audioSettings.track?' selected':'')+'>'+t.title+'</option>').join('')}</select><label for="music-mode">Playback</label><select id="music-mode"><option value="rotation"${audioSettings.musicMode==='rotation'?' selected':''}>Rotate all tracks</option><option value="shuffle"${audioSettings.musicMode==='shuffle'?' selected':''}>Shuffle all tracks</option><option value="repeat"${audioSettings.musicMode==='repeat'?' selected':''}>Repeat this track</option></select><div class="music-current"><span>Now playing</span><strong id="music-now-playing">${currentMusic().title}</strong><small><span>By</span> <span id="music-author" data-l10n-skip>${currentMusic().author}</span></small><button class="secondary-btn" id="music-next">Next track ⏭</button></div><p id="music-status" role="status" hidden>Music unavailable. Try another track.</p><p class="music-credit"><span>Music is bundled for offline play. Each track has its own license.</span> <a id="music-source" href="${currentMusic().source}" target="_blank" rel="noopener">Source</a> · <a id="music-license" href="${currentMusic().licenseUrl}" target="_blank" rel="noopener" data-l10n-skip>${currentMusic().license}</a> · <a href="/assets/music-credits.txt" target="_blank" rel="noopener">Music credits</a></p></div></div><div class="settings-list"><button class="secondary-btn" id="setting-sound">Master audio <span>${audioSettings.muted?'Muted':'On ♫'}</span></button><button class="secondary-btn" id="setting-cutins">Anime cut-ins <span>${audioSettings.cutins?'On':'Off'}</span></button><button class="secondary-btn" id="setting-voice">Character voice <span>${audioSettings.voice?'On':'Off'}</span></button><button class="secondary-btn" id="setting-fullscreen">Fullscreen <span>${window.kingdomsDesktop?'F11 / Alt+Enter':'⛶'}</span></button><button class="secondary-btn" id="setting-home">${room?'Room lobby':'Battle lobby'} <span>→</span></button>${room?'<button class="secondary-btn" id="setting-room-leave">Leave room <span>↗</span></button>':''}${room?.ready&&!state.winner?'<button class="secondary-btn" id="setting-resign">Resign ⚑</button>':''}<button class="secondary-btn" id="setting-rules">How to play <span>→</span></button>${installPrompt?'<button class="primary-btn" id="install-game">Install game ↓</button>':''}</div><p class="settings-hint">Character voice uses your device’s available speech voice. Bots, music and pass & play work offline in the installed game. Online duels need internet. Levels and avatars save on this device.</p>`);
+  modal(`<p class="eyebrow">YOUR COMMAND TENT</p><h2>${screen==='battle'?'Battle menu':'Settings'}</h2><div class="settings-language-slot"></div>${networkSample&&room&&!isSteam()?`<p class="network-diagnostics">Last server response: ${networkSample.roundTrip} ms${networkSample.database!==null?` · D1 round trip: ${networkSample.database} ms`:""}</p>`:""}<div class="audio-settings"><label>Music volume <output id="music-value">${Math.round(audioSettings.music*100)}%</output><input id="music-volume" type="range" min="0" max="100" value="${audioSettings.music*100}"></label><label>Battle effects <output id="effects-value">${Math.round(audioSettings.effects*100)}%</output><input id="effects-volume" type="range" min="0" max="100" value="${audioSettings.effects*100}"></label><div class="music-library"><label for="music-track">Soundtrack</label><select id="music-track">${MUSIC_TRACKS.map(t=>'<option value="'+t.id+'"'+(t.id===audioSettings.track?' selected':'')+'>'+t.title+'</option>').join('')}</select><label for="music-mode">Playback</label><select id="music-mode"><option value="rotation"${audioSettings.musicMode==='rotation'?' selected':''}>Rotate all tracks</option><option value="shuffle"${audioSettings.musicMode==='shuffle'?' selected':''}>Shuffle all tracks</option><option value="repeat"${audioSettings.musicMode==='repeat'?' selected':''}>Repeat this track</option></select><div class="music-current"><span>Now playing</span><strong id="music-now-playing">${currentMusic().title}</strong><small><span>By</span> <span id="music-author" data-l10n-skip>${currentMusic().author}</span></small><button class="secondary-btn" id="music-next">Next track ⏭</button></div><p id="music-status" role="status" hidden>Music unavailable. Try another track.</p><p class="music-credit"><span>Music is bundled for offline play. Each track has its own license.</span> <a id="music-source" href="${currentMusic().source}" target="_blank" rel="noopener">Source</a> · <a id="music-license" href="${currentMusic().licenseUrl}" target="_blank" rel="noopener" data-l10n-skip>${currentMusic().license}</a> · <a href="/assets/music-credits.txt" target="_blank" rel="noopener">Music credits</a></p></div></div><div class="settings-list"><button class="secondary-btn" id="setting-sound">Master audio <span>${audioSettings.muted?'Muted':'On ♫'}</span></button><button class="secondary-btn" id="setting-cutins">Anime cut-ins <span>${audioSettings.cutins?'On':'Off'}</span></button><button class="secondary-btn" id="setting-voice">Character voice <span>${audioSettings.voice?'On':'Off'}</span></button><button class="secondary-btn" id="setting-fullscreen">Fullscreen <span>${window.kingdomsDesktop?'F11 / Alt+Enter':'⛶'}</span></button><button class="secondary-btn" id="setting-home">${room?'Room lobby':'Battle lobby'} <span>→</span></button>${room?'<button class="secondary-btn" id="setting-room-leave">Leave room <span>↗</span></button>':''}${room?.ready&&!state.winner?'<button class="secondary-btn" id="setting-resign">Resign ⚑</button>':''}<button class="secondary-btn" id="setting-rules">How to play <span>→</span></button>${installPrompt?'<button class="primary-btn" id="install-game">Install game ↓</button>':''}</div><p class="settings-hint">Character voice uses your device’s available speech voice. Bots, music and pass & play work offline in the installed game. Online duels need internet. Levels and avatars save on this device.</p>`);
   $('music-track').onchange=e=>chooseMusic(e.target.value);$('music-mode').onchange=e=>setMusicMode(e.target.value);$('music-next').onclick=nextMusic;
   for(const key of ['music','effects'])$(key+'-volume').oninput=e=>{audioSettings[key]=Number(e.target.value)/100;audioSettings.muted=false;$(key+'-value').textContent=e.target.value+'%';saveAudio();renderSetup();};
   $('setting-sound').onclick=()=>{$('sound').click();showSettings();};$('setting-cutins').onclick=()=>{audioSettings.cutins=!audioSettings.cutins;if(!audioSettings.cutins)$('cutin').hidden=true;saveAudio();showSettings();};$('setting-voice').onclick=()=>{audioSettings.voice=!audioSettings.voice;saveAudio();if(audioSettings.voice)speak(avatarLine(profile.avatar,'start'));else if('speechSynthesis'in window)speechSynthesis.cancel();showSettings();};
@@ -499,7 +572,7 @@ $('join-form').onsubmit=async e=>{
   try{await ensureCommander({api,getProfile:()=>profile});const commander=await syncCommander({api,getProfile:()=>profile});const data=await api(`/api/rooms/${code}/join`,{avatar:profile.avatar,castle:profile.cosmetics.castle,commanderToken:commander.token});connectRoom(data);toast('Your rival awaits. Let the battle begin.');}
   catch(err){toast(err.message);}finally{b.disabled=false;}
 };
-$('copy-invite').onclick=async()=>{if(!room)return;const link=PUBLIC_ORIGIN+'/?room='+room.code;try{await navigator.clipboard.writeText(link);toast('Invite copied. Send it to your rival.');}catch{toast('Room code: '+room.code);}};
+$('copy-invite').onclick=async()=>{if(!room)return;const link=isSteam()?room.code:PUBLIC_ORIGIN+'/?room='+room.code;try{await navigator.clipboard.writeText(link);toast(isSteam()?'Steam lobby ID copied. Send it to your friend.':'Invite copied. Send it to your rival.');}catch{toast('Room code: '+room.code);}};
 document.addEventListener('visibilitychange',()=>{if(room){clearTimeout(roomTimer);if(!document.hidden)pollRoom();}});
 window.addEventListener('storage',e=>{if(e.key===PROFILE_KEY){try{profile=normalizeProfile(JSON.parse(e.newValue));renderProfile();}catch{}}});
 

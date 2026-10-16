@@ -1,12 +1,13 @@
 import { messages as gameMessages, patterns as gamePatterns, htmlMessages as gameHTML } from './locales/zh-game.js';
 import { messages as ruleMessages, patterns as rulePatterns, htmlMessages as ruleHTML } from './locales/zh-rules.js';
 import { messages as collectionMessages, patterns as collectionPatterns, htmlMessages as collectionHTML } from './locales/zh-collection.js';
+import { messages as steamMessages } from './locales/zh-steam.js';
 
 export const LANGUAGE_KEY='little-kingdoms-language';
 export const LANGUAGES=Object.freeze(['en','zh-Hans']);
 const normalized=value=>String(value).replace(/\s+/g,' ').trim();
 const htmlKey=value=>normalized(value).replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
-const messages=new Map(Object.entries({...gameMessages,...ruleMessages,...collectionMessages}).map(([key,value])=>[normalized(key),value]));
+const messages=new Map(Object.entries({...gameMessages,...ruleMessages,...collectionMessages,...steamMessages}).map(([key,value])=>[normalized(key),value]));
 const htmlMessages=new Map(Object.entries({...gameHTML,...ruleHTML,...collectionHTML}).map(([key,value])=>[htmlKey(key),value]));
 const genericPatterns=new Set(['^(.+) · (.+)$','^(.+), (.+)$','^(.+) & (.+)$']);
 const patterns=[...gamePatterns,...rulePatterns,...collectionPatterns].filter(([source])=>!genericPatterns.has(source)).map(([source,replacement,options])=>({regex:new RegExp(source,'u'),replacement,raw:new Set(options?.raw||[])}));

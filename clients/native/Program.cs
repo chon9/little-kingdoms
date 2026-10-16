@@ -9,7 +9,8 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
 // A small Windows host. Game files stay local; the OS-shared Evergreen runtime
-// supplies the renderer. The only bridge operations are display controls.
+// supplies the renderer. The bridge exposes display controls and a bounded
+// Steam test transport, only to this exact bundled origin.
 internal sealed class GameWindow : Form {
     readonly WebView2 view = new WebView2();
     readonly bool qa = Environment.GetEnvironmentVariable("KINGDOMS_QA") == "1";
@@ -17,6 +18,7 @@ internal sealed class GameWindow : Form {
     bool fullscreen;
     Rectangle windowedBounds;
     FormWindowState windowedState;
+    SteamBridge steam;
     const string Origin = "https://kingdoms.local";
     protected override bool ShowWithoutActivation { get { return qa; } }
 
@@ -34,6 +36,7 @@ internal sealed class GameWindow : Form {
         Controls.Add(view); view.Dock=DockStyle.Fill;view.DefaultBackgroundColor=BackColor;
         Shown+=async(sender,args)=>{await Initialize();};
         FormClosing+=delegate {if(!qa)File.WriteAllText(Path.Combine(data,"display.txt"),fullscreen?"fullscreen":"windowed");};
+        FormClosed+=delegate {if(steam!=null)steam.Dispose();};
     }
     async Task Initialize() {
         try {
@@ -42,6 +45,7 @@ internal sealed class GameWindow : Form {
             var environment=await CoreWebView2Environment.CreateAsync(null,Path.Combine(data,"WebView2"),options);
             await view.EnsureCoreWebView2Async(environment);
             var core=view.CoreWebView2;
+            steam=new SteamBridge(payload=>{if(!IsDisposed)core.PostWebMessageAsJson(new JavaScriptSerializer().Serialize(new {steamEvent=payload}));});
             core.SetVirtualHostNameToFolderMapping("kingdoms.local",Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"www"),CoreWebView2HostResourceAccessKind.DenyCors);
             core.Settings.AreDefaultContextMenusEnabled=false;
             core.Settings.AreDevToolsEnabled=qa;
@@ -58,10 +62,16 @@ internal sealed class GameWindow : Form {
                 Uri source;if(!Uri.TryCreate(e.Source,UriKind.Absolute,out source)||source.GetLeftPart(UriPartial.Authority)!=Origin)return;
                 try {
                     var serializer=new JavaScriptSerializer();
+                    if(e.WebMessageAsJson.Length>30000)return;
                     var message=serializer.Deserialize<System.Collections.Generic.Dictionary<string,object>>(e.WebMessageAsJson);
                     if(message==null)return;
                     var command=message.ContainsKey("command")?message["command"] as string:null;
                     var id=message.ContainsKey("id")?Convert.ToInt32(message["id"]):0;
+                    if(command!=null&&command.StartsWith("steam",StringComparison.Ordinal)){
+                        try{core.PostWebMessageAsJson(serializer.Serialize(new {id=id,result=steam.Handle(command,message)}));}
+                        catch(Exception error){core.PostWebMessageAsJson(serializer.Serialize(new {id=id,result=new {ok=false,error=error is DllNotFoundException||error is BadImageFormatException?"Steam runtime is missing. Extract the complete Windows test ZIP.":error.Message}}));}
+                        return;
+                    }
                     if(command=="toggleFullscreen")SetFullscreen(!fullscreen);
                     else if(command=="exitFullscreen")SetFullscreen(false);
                     else if(command!="getDisplay")return;
@@ -70,10 +80,11 @@ internal sealed class GameWindow : Form {
             };
             await core.AddScriptToExecuteOnDocumentCreatedAsync(@"
                 (()=>{if(location.origin!=='https://kingdoms.local')return;
-                  let id=0;const pending=new Map();
-                  chrome.webview.addEventListener('message',event=>{const response=event.data,entry=pending.get(response.id);if(entry){clearTimeout(entry.timer);pending.delete(response.id);entry.resolve(response);}});
-                  const call=command=>new Promise((resolve,reject)=>{const key=++id;pending.set(key,{resolve,timer:setTimeout(()=>{pending.delete(key);reject(new Error('Display control timed out'));},3000)});chrome.webview.postMessage({command,id:key});});
+                  let id=0;const pending=new Map(),listeners=new Set();
+                  chrome.webview.addEventListener('message',event=>{const response=event.data;if(response.steamEvent){for(const listener of listeners)try{listener(response.steamEvent);}catch{}return;}const entry=pending.get(response.id);if(entry){clearTimeout(entry.timer);pending.delete(response.id);entry.resolve(response.result||response);}});
+                  const call=(command,args={})=>new Promise((resolve,reject)=>{const key=++id;pending.set(key,{resolve,timer:setTimeout(()=>{pending.delete(key);reject(new Error('Native control timed out'));},5000)});chrome.webview.postMessage({...args,command,id:key});});
                   Object.defineProperty(window,'kingdomsDesktop',{value:Object.freeze({platform:'windows-webview2',toggleFullscreen:()=>call('toggleFullscreen'),exitFullscreen:()=>call('exitFullscreen'),getDisplay:()=>call('getDisplay')})});
+                  Object.defineProperty(window,'kingdomsSteam',{value:Object.freeze({init:()=>call('steamInit'),status:()=>call('steamStatus'),create:()=>call('steamCreate'),join:lobby=>call('steamJoin',{lobby}),leave:()=>call('steamLeave'),send:(peer,payload)=>call('steamSend',{peer,payload}),friends:()=>call('steamFriends'),invite:friend=>call('steamInvite',{friend}),on:listener=>{listeners.add(listener);return()=>listeners.delete(listener);}})});
                   document.addEventListener('keydown',event=>{if(event.key==='F11'||event.key==='Enter'&&event.altKey){event.preventDefault();if(!event.repeat)call('toggleFullscreen').catch(()=>{});}else if(event.key==='Escape'&&!document.querySelector('dialog[open]'))call('exitFullscreen').catch(()=>{});});
                 })();
             ");
@@ -94,5 +105,5 @@ internal sealed class GameWindow : Form {
         fullscreen=enabled;
     }
     [DllImport("user32.dll")]static extern bool SetProcessDPIAware();
-    [STAThread] static void Main(){SetProcessDPIAware();Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);Application.Run(new GameWindow());}
+    [STAThread] static void Main(){Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);SetProcessDPIAware();Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);Application.Run(new GameWindow());}
 }

@@ -1,6 +1,6 @@
 {
   "name": "little-kingdoms-client",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "private": true,
   "description": "Little Kingdoms offline-capable Android and Windows clients with shared online PvP.",
   "author": "Little Kingdoms",
