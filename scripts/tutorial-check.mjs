@@ -47,7 +47,7 @@ try{
     assert.equal(await evaluate('document.querySelector("#tutorial-next").getBoundingClientRect().bottom<=innerHeight'),true,'review fits '+w+'x'+h);
   }
   await screenshot('tutorial-desktop');
-  await evaluate('navigator.serviceWorker.ready');await until(`caches.keys().then(keys=>keys.includes('little-kingdoms-v2.7.1'))`);
+  await evaluate('navigator.serviceWorker.ready');await until(`caches.keys().then(keys=>keys.includes('little-kingdoms-v2.8.0'))`);
   await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});await send('Page.reload');await until('document.querySelectorAll("#tutorial-board .cell").length===81');
   assert.deepEqual(errors,[]);console.log('Tutorial browser checks passed: all ten lessons, safe eyes, sealed territory, true danger/defense, blocked moves, refresh recovery, isolated match/XP data, phone/landscape/desktop and cached offline launch.');
 }finally{ws?.close();edge.kill();}

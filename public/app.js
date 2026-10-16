@@ -199,7 +199,7 @@ function render(pop = false) {
   $('battle-leave').hidden=config.mode!=='online'||!room;$('battle-leave').disabled=pending;
   $('battle-back').querySelector('span').textContent=room?'Room':'Lobby';
   $('resign').disabled=!started||!!state.winner||pending||(config.mode==='online'&&!room?.ready);
-  localize();
+  renderRematch();localize();
 }
 
 function selectCell(i) {
@@ -272,9 +272,7 @@ function replayBattle() {
   if(pending)return;
   if(config.mode==='online') {
     if(!state.winner)return;
-    $('modal').close();stopRoom();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;
-    state=newGame();started=false;selected=null;snapshots=[];screen='lobby';render();
-    toast('Create a new room and share its invitation, or join your friend’s new room.');return;
+    submitRematch(rematchPrimaryAction());return;
   }
   const restart=()=>{$('modal').close();startBattle();};
   if(!started||state.winner||!state.ply){restart();return;}
@@ -315,9 +313,9 @@ function showResult() {
   const s=scoredWinner(state),win=state.winner;
   if(config.mode==='bot'&&win===config.humanColor){emotion='sad';clearTimeout(emotionTimer);emotionTimer=setTimeout(()=>{emotion='';render();},6000);render();}
   const reason=state.reason==='capture'?'An enemy group has no liberties. One capture, one kingdom.':state.reason==='simultaneous'?'Both sides lost their final liberties. The simultaneous capture rule awards the battle to Wei.':state.reason==='resignation'?'The opposing commander has laid down their banner.':'The final territories are sealed. The land has spoken.';
-  modal(`<div class="result-view ${['capture','simultaneous'].includes(state.reason)?'capture-result':''}" data-winner="${win===1?'blue':'orange'}">${['capture','simultaneous'].includes(state.reason)?`<div class="capture-callout" role="status"><span class="capture-seal" aria-hidden="true">斬</span><div><small>${state.reason==='simultaneous'?'SIMULTANEOUS CAPTURE':'DECISIVE STRIKE'}</small><strong>CASTLE FALLS!</strong><b>${win===1?'BLUE WINS BY CAPTURE':'ORANGE WINS BY CAPTURE'}</b></div></div>`:''}<div class="result-heading"><div id="result-portrait" class="portrait"></div><div><p class="eyebrow">${config.mode==='local'?'BATTLE COMPLETE':win===config.humanColor?'VICTORY':'ANOTHER BATTLE AWAITS'}</p><h2>${colorName(win)} rules the riverlands.</h2></div></div><div class="result-body" tabindex="0" aria-label="Battle results and rewards"><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}${config.mode==='online'?'<p>For another duel, create a new room and invite your friend again.</p>':''}<button class="resume-btn" id="result-collection">View avatar collection →</button></div><div class="result-actions"><button class="primary-btn" id="play-again">${config.mode==='online'?'New online duel ↗':'Play again ↻'}</button><button class="secondary-btn" id="result-lobby">Battle lobby →</button></div></div>`);
+  modal(`<div class="result-view ${['capture','simultaneous'].includes(state.reason)?'capture-result':''}" data-winner="${win===1?'blue':'orange'}">${['capture','simultaneous'].includes(state.reason)?`<div class="capture-callout" role="status"><span class="capture-seal" aria-hidden="true">斬</span><div><small>${state.reason==='simultaneous'?'SIMULTANEOUS CAPTURE':'DECISIVE STRIKE'}</small><strong>CASTLE FALLS!</strong><b>${win===1?'BLUE WINS BY CAPTURE':'ORANGE WINS BY CAPTURE'}</b></div></div>`:''}<div class="result-heading"><div id="result-portrait" class="portrait"></div><div><p class="eyebrow">${config.mode==='local'?'BATTLE COMPLETE':win===config.humanColor?'VICTORY':'ANOTHER BATTLE AWAITS'}</p><h2>${colorName(win)} rules the riverlands.</h2></div></div><div class="result-body" tabindex="0" aria-label="Battle results and rewards"><p>${reason}</p><div class="reward-panel" id="match-reward"><strong>${reward.xp?'+'+reward.xp+' XP':reward.duplicate?'Progress already saved':'Practice complete · 0 XP'}</strong><span>${reward.firstVictory?'FIRST VICTORY BONUS · ':''}COMMANDER LEVEL ${levelForXP(profile.xp)}</span>${reward.level>reward.previousLevel?'<b class="level-up">LEVEL UP! '+reward.previousLevel+' → '+reward.level+'</b>':''}${reward.unlocked.length?'<p>Generals unlocked: '+reward.unlocked.map(a=>a.name).join(', ')+'</p>':''}${!reward.eligible&&!reward.duplicate?'<small>Play 4 castles total, including 2 of your own, to earn XP. Resigning earns no XP.</small>':''}</div><p class="character-result">“${avatarLine(avatarFor(config.humanColor),win===config.humanColor?'win':'loss')}”</p><div class="result-scores"><div><small>SHU · RAW ${s.raw[1]} − 2</small><strong>${s.adjusted[1]}</strong><small>adjusted territory</small></div><div><small>WEI · RAW ${s.raw[2]}</small><strong>${s.adjusted[2]}</strong><small>territory</small></div></div>${state.reason==='territory'?'<p>Shu needs an adjusted lead of 3.<br>A smaller lead or a tie belongs to Wei.</p>':''}${config.mode==='online'?'<div id="result-rematch"></div>':''}<button class="resume-btn" id="result-collection">View avatar collection →</button></div><div class="result-actions"><button class="primary-btn" id="play-again">${config.mode==='online'?'Request rematch ↻':'Play again ↻'}</button><button class="secondary-btn" id="result-lobby">${room?'Room lobby →':'Battle lobby →'}</button></div></div>`);
   if(config.mode==='bot'&&win!==config.humanColor)portrait($('result-portrait'),win,config.level);else avatarPortrait($('result-portrait'),avatarFor(win));
-  $('result-collection').onclick=showGenerals;$('play-again').onclick=replayBattle;$('result-lobby').onclick=()=>{$('modal').close();screen='lobby';render();};$('play-again').focus({preventScroll:true});
+  $('result-collection').onclick=showGenerals;$('play-again').onclick=replayBattle;$('result-lobby').onclick=()=>{$('modal').close();screen=room?'room':'lobby';render();};renderRematch();$('play-again').focus({preventScroll:true});
   if(reward.level>reward.previousLevel){const bonus=document.createElement('button');bonus.className='result-pulls';bonus.textContent=`✦ +${reward.level-reward.previousLevel} level-up pull${reward.level-reward.previousLevel===1?'':'s'} · Open Treasury →`;bonus.onclick=showTreasury;$('match-reward').append(bonus);}
 }
 
@@ -329,6 +327,42 @@ async function api(path,body,token) {
   }catch(e){if(e.name==='AbortError')throw new Error('Connection timed out. Your room is still saved; retry shortly.');throw e;}
   finally{clearTimeout(timer);}
 }
+function rematchPrimaryAction(){return state.rematch?.status==='pending'?'accept':'request';}
+function renderRematch(){
+  const active=config.mode==='online'&&!!room&&!!state.winner;
+  const offer=state.rematch,offered=offer?.status==='pending',own=offered&&offer.accepted.includes(config.humanColor),unavailable=!!state.roomDeparted?.length;
+  const label=unavailable?'Rematch unavailable':own?'Waiting for rival…':offered?'Accept rematch ↻':'Request rematch ↻';
+  const message=unavailable?'A commander left this room. Create a new room to play again.':own?'You accepted. Waiting for your rival to accept.':offered?'Your rival wants a rematch. Accept to begin again in this room.':offer?.status==='declined'?(offer.by===config.humanColor?'You declined the rematch.':'Your rival declined the rematch.'):offer?.status==='cancelled'?'The rematch request was cancelled.':'Same room, same kingdoms. Both commanders must accept.';
+  for(const id of ['room-rematch','result-rematch']){
+    const root=$(id);if(!root)continue;root.hidden=!active;if(!active)continue;
+    root.innerHTML=`<div class="rematch-panel"><strong>SAME ROOM · REMATCH</strong><p role="status" aria-live="polite">${message}</p><div class="rematch-actions">${id==='room-rematch'&&!unavailable&&!own?`<button class="primary-btn" data-rematch-action="${rematchPrimaryAction()}">${label}</button>`:''}${!unavailable&&offered?`<button class="secondary-btn" data-rematch-action="${own?'cancel':'decline'}">${own?'Cancel request':'Decline'}</button>`:''}</div></div>`;
+    root.querySelectorAll('button').forEach(b=>b.disabled=pending);localize(root);
+  }
+  if(active){
+    for(const id of ['play-again','deploy','battle-restart'])if($(id)){$(id).textContent=label;$(id).disabled=pending||unavailable||own;localize($(id));}
+  }
+}
+function rematchStarted(before){
+  if(!before.matchId||before.matchId===state.matchId||state.winner)return false;
+  $('modal').close();$('modal-content').replaceChildren();stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;cutinCooldown=0;snapshots=[];selected=null;screen='battle';return true;
+}
+async function submitRematch(action){
+  if(!room||!state.winner||pending||state.roomDeparted?.length)return;
+  const code=room.code,matchId=state.matchId,offerId=state.rematch?.id;pending=true;render();
+  try{
+    const data=await api(`/api/rooms/${code}/rematch`,{action,matchId,offerId,version:room.version},room.token);
+    if(room?.code!==code)return;
+    const before=state;state=data.state;room.version=data.version;room.ready=data.ready;const restarted=rematchStarted(before);storeRoom();render();if(restarted)playerCutin(config.humanColor,'start',true);
+  }catch(e){pending=false;await pollRoom();toast(e.message);}
+  finally{pending=false;render();}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-rematch-action]');if(b&&!b.disabled)submitRematch(b.dataset.rematchAction);});
+async function leaveFinishedRoom(onLeft){
+  const code=room.code;pending=true;render();
+  try{await api(`/api/rooms/${code}/leave`,{version:room.version},room.token);if(room?.code!==code)return;$('modal').close();resetOnlineRoom();if(onLeft!==resetOnlineRoom)onLeft();}
+  catch(e){pending=false;await pollRoom();toast(e.message);}
+  finally{pending=false;render();}
+}
 function storeRoom() {try{const saved=JSON.stringify({...room,config});sessionStorage.setItem('little-kingdoms-room',saved);if(API_BASE)localStorage.setItem('little-kingdoms-room',saved);}catch{}}
 function renderRoomLobby(){
   if(!room)return;
@@ -339,19 +373,19 @@ function renderRoomLobby(){
     const name=$('room-'+prefix+'-name');name.toggleAttribute('data-user-content',!!player?.displayName);
     name.textContent=player?.displayName||(present?(AVATARS[player.avatar]||AVATARS[0]).name:'Open seat');
     if(present)avatarPortrait($('room-'+prefix+'-avatar'),player.avatar);else $('room-'+prefix+'-avatar').removeAttribute('style');
-    $('room-'+prefix+'-role').textContent=!present?'Waiting for rival':own?'You · Connected':'Rival · Connected';
+    $('room-'+prefix+'-role').textContent=state.roomDeparted?.includes(c)?'Rival · Left':!present?'Waiting for rival':own?'You · Connected':'Rival · Connected';
   }
   $('room-wait-title').textContent=roomError?'Reconnecting…':room.version<0?'Reconnecting to your room…':!room.ready?'Waiting for your rival…':state.winner?'Duel complete':'Duel in progress';
-  $('room-wait-description').textContent=roomError||(!room.ready?'The battle starts automatically when your rival joins.':state.winner?'The battle is over. Leave this room to host another duel.':'Both commanders are here. Return to the battlefield to continue.');
+  $('room-wait-description').textContent=roomError||(!room.ready?'The battle starts automatically when your rival joins.':state.winner?'Request a rematch here. Both commanders must agree before a new duel begins.':'Both commanders are here. Return to the battlefield to continue.');
   $('room-enter-battle').hidden=!room.ready;$('room-enter-battle').textContent=state.winner?'View finished battle →':'Return to battlefield →';
   $('room-leave').textContent=pending?'Leaving room…':!room.ready?'Close room & leave':'Leave room';
   $('room-leave').disabled=pending||room.version<0;
-  $('room-screen').classList.toggle('room-connected',room.ready);
+  $('room-screen').classList.toggle('room-connected',room.ready);renderRematch();
 }
 function resetOnlineRoom(){stopRoom();stopBot();resetEmotion();clearTimeout(cutinTimer);$('cutin').hidden=true;state=newGame();started=false;selected=null;snapshots=[];screen='lobby';render();}
 function requestLeaveRoom(onLeft=resetOnlineRoom){
   if(!room||pending)return;
-  if(state.winner){resetOnlineRoom();if(onLeft!==resetOnlineRoom)onLeft();return;}
+  if(state.winner){leaveFinishedRoom(onLeft);return;}
   const live=room.ready,{code,token,version}=room;
   modal(`<p class="eyebrow">${live?'LEAVE ONLINE DUEL':'CLOSE WAITING ROOM'}</p><h2>${live?'Resign and leave?':'Close this room?'}</h2><p>${live?'Leaving resigns this duel and awards your rival the win.':'Your invitation will stop working. No match or result will be recorded.'}</p><div class="dialog-actions"><button class="secondary-btn" id="cancel-leave-room">Stay in room</button><button class="primary-btn" id="confirm-leave-room">${live?'Resign & leave':'Close room & leave'}</button></div>`);
   $('cancel-leave-room').onclick=()=>$('modal').close();
@@ -382,7 +416,7 @@ async function pollRoom(){
     if(!room||room.code!==code)return;
     if(data.phase==='closed'||data.state.roomClosed){resetOnlineRoom();toast('This room was closed by its host. Create or join another room.');return;}
     roomError='';const wasReady=room.ready;const ended=!!state.winner;const changed=data.version!==room.version||data.ready!==room.ready;
-    if(changed&&!pending){const before=state;room.version=data.version;room.ready=data.ready;room.hostColor=data.hostColor;state=data.state;started=data.ready;selected=null;if(!wasReady&&data.ready){screen='battle';playerCutin(config.humanColor,'start',true);}storeRoom();render(true);reactPlayer(before,state);if(state.winner&&!ended)showResult();else tone();}
+    if(changed&&!pending){const before=state;room.version=data.version;room.ready=data.ready;room.hostColor=data.hostColor;state=data.state;started=data.ready;selected=null;const restarted=rematchStarted(before);if(!wasReady&&data.ready){screen='battle';}storeRoom();render(true);if(restarted||!wasReady&&data.ready)playerCutin(config.humanColor,'start',true);else if(!state.winner||!before.winner)reactPlayer(before,state);if(state.winner&&!ended)showResult();else if(before.rematch?.id!==state.rematch?.id&&state.rematch?.status==='pending'&&!state.rematch.accepted.includes(config.humanColor))toast('Your rival requested a rematch. Accept from Results or the room lobby.');else tone();}
     if($('room-status'))$('room-status').textContent=room.ready?`Connected. You command ${colorName(config.humanColor)}.`:'Waiting for your opponent…';
     renderRoomLobby();localize($('room-screen'));localize($('room-status'));
   }catch(e){if(room?.code===code){if([401,403,404,410].includes(e.status)){resetOnlineRoom();toast(e.message);}else{roomError=e.message+' Reconnecting…';render();}}}
@@ -395,7 +429,7 @@ for(const [id,c]of[['choose-shu',1],['choose-wei',2]])$(id).onclick=()=>{if(conf
 for(const m of['bot','local','online'])$('mode-'+m).onclick=()=>switchMode(m);
 $('begin').onclick=()=>confirmChange(startBattle);
 $('lead-ribbon').onclick=()=>toast($('lead-ribbon').title);
-$('deploy').onclick=()=>{if(state.winner){replayBattle();return;}if(!started){startBattle();return;}if(selected!==null)act(selected);};$('pass').onclick=()=>{if(state.winner){screen='lobby';render();}else act('pass');};$('battle-restart').onclick=replayBattle;
+$('deploy').onclick=()=>{if(state.winner){replayBattle();return;}if(!started){startBattle();return;}if(selected!==null)act(selected);};$('pass').onclick=()=>{if(state.winner){screen=room?'room':'lobby';render();}else act('pass');};$('battle-restart').onclick=replayBattle;
 $('undo').onclick=()=>{
   if(state.winner){showResult();return;}
   if(!snapshots.length||config.mode==='online'||state.winner)return;

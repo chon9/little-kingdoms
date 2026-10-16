@@ -18,11 +18,11 @@ const commanderCounts = "SELECT c.*, (SELECT COUNT(*) FROM online_results r WHER
 // An accepted move must remain successful even when the result service is briefly
 // unavailable. Subsequent authenticated room reads reconcile the append-only rows.
 async function reconcileResult(store, state) {
-  if(!state.winner||!store.recordResults||state.count[1]<2||state.count[2]<2)return;
+  if(!state.winner||!store.recordResults||state.count[1]<2||state.count[2]<2)return true;
   const blue=state.players?.[1]?.commanderId,orange=state.players?.[2]?.commanderId;
-  if(!blue||!orange||blue===orange||!state.matchId)return;
-  try { await store.recordResults([1,2].map(color=>({matchId:state.matchId,commanderId:state.players[color].commanderId,won:state.winner===color?1:0,completed:Date.now()}))); }
-  catch { console.error('Leaderboard result recording deferred.'); }
+  if(!blue||!orange||blue===orange||!state.matchId)return true;
+  try { await store.recordResults([1,2].map(color=>({matchId:state.matchId,commanderId:state.players[color].commanderId,won:state.winner===color?1:0,completed:Date.now()})));return true; }
+  catch { console.error('Leaderboard result recording deferred.');return false; }
 }
 
 export class D1Store {
@@ -118,7 +118,7 @@ async function processAPI(request, store) {
       }
       return json({ error: 'Could not create a room. Please try again.' }, 503);
     }
-    const match = path.match(/^\/api\/rooms\/([A-Z0-9]{6})(?:\/(join|move|leave))?$/);
+    const match = path.match(/^\/api\/rooms\/([A-Z0-9]{6})(?:\/(join|move|leave|rematch))?$/);
     if (!match) return json({ error: 'Room endpoint not found.' }, 404);
     const [, code, command] = match, room = await store.get(code);
     if (!room || room.expires <= Date.now()) return json({ error: 'Room not found or expired. Check the code or create a new room.' }, 404);
@@ -139,13 +139,38 @@ async function processAPI(request, store) {
     const hash = await digest(token), color = hash === room.hostHash ? room.hostColor : hash === room.guestHash ? 3 - room.hostColor : null;
     if (!color) return json({ error: 'You are not a commander in this room.' }, 403);
     if (!command && request.method === 'GET') { await reconcileResult(store,JSON.parse(room.state));return json(exposed(room, color)); }
+    if(command==='rematch'&&isPost){
+      const state=JSON.parse(room.state),offer=state.rematch;
+      if(state.roomClosed||state.roomDeparted?.length)return json({error:'A commander left this room. Create a new room to play again.'},409);
+      if(!room.guestHash||!state.winner)return json({error:'Finish the current duel before requesting a rematch.'},409);
+      if(body.matchId!==state.matchId)return json({error:'This rematch belongs to an older duel. Refresh the room.'},409);
+      if(!['request','accept','decline','cancel'].includes(body.action))return json({error:'Choose a valid rematch action.'},400);
+      if(body.action!=='request'&&(offer?.status!=='pending'||body.offerId!==offer.id))return json({error:'This rematch request changed. Check the room again.'},409);
+      if((body.action==='request'||body.action==='accept')&&offer?.status==='pending'&&offer.accepted.includes(color))return json(exposed(room,color));
+      if(!Number.isInteger(body.version)||body.version!==room.version)return json({error:'This rematch request changed. Check the room again.'},409);
+      let next;
+      if(body.action==='request'){
+        if(offer?.status==='pending')return json({error:'Your rival already requested a rematch. Accept or decline it.'},409);
+        next={...state,rematch:{id:crypto.randomUUID(),status:'pending',accepted:[color]}};
+      }else if(body.action==='accept'){
+        // Save the finished result before replacing the room's current match.
+        if(!await reconcileResult(store,state))return json({error:'The last result is still saving. Please retry the rematch.'},503);
+        next={...newGame(state.scoring),matchId:crypto.randomUUID(),players:state.players};
+      }else{
+        if((body.action==='cancel')!==offer.accepted.includes(color))return json({error:'Choose a valid rematch action.'},400);
+        next={...state,rematch:{...offer,status:body.action==='cancel'?'cancelled':'declined',accepted:[],by:color}};
+      }
+      const serialized=JSON.stringify(next);
+      if(!await store.update(code,room.version,serialized))return json({error:'This rematch request changed. Check the room again.'},409);
+      return json(exposed({...room,state:serialized,version:room.version+1},color));
+    }
     if (command === 'leave' && isPost) {
       const state=JSON.parse(room.state);
-      if(state.winner||state.roomClosed)return json(exposed(room,color));
+      if(state.roomClosed||state.roomDeparted?.includes(color))return json(exposed(room,color));
       if(!Number.isInteger(body.version)||body.version!==room.version)return json({error:'The room changed. Check the lobby before leaving.'},409);
       // Cancelling a waiting room earns no winner or rewards. A live departure
       // is a resignation, even before the first move or on the rival's turn.
-      const next=room.guestHash?play({...state,turn:color},'resign'):{...state,roomClosed:true};
+      const next=room.guestHash?{...(state.winner?state:play({...state,turn:color},'resign')),roomDeparted:[...(state.roomDeparted||[]),color],rematch:null}:{...state,roomClosed:true};
       const serialized=JSON.stringify(next);
       if(!await store.update(code,room.version,serialized))return json({error:'The room changed. Check the lobby before leaving.'},409);
       await reconcileResult(store,next);

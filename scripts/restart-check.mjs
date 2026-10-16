@@ -66,12 +66,12 @@ try{
   assert.equal(await p.evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state.count[1]'),1,'cancelled Worker cannot mutate the new match');
   await p.click('#resign');await p.click('#confirm-resign');await p.reachable('#play-again');await p.click('#play-again');
   await p.fixture('local','simultaneous');await p.click('[data-index="1"]');await p.click('#deploy');await p.reachable('#play-again');await p.click('#play-again');
-  // Online new-duel flow creates a fresh invitation without resetting the other seat.
+  // Online rematch waits for consent; explicitly leaving permits a fresh invitation.
   await p.click('#battle-back');await p.click('#mode-online');await p.click('#create-room');await p.until('document.querySelector("#active-room-code").textContent.length===6');
   const code=await p.evaluate('document.querySelector("#active-room-code").textContent');
   const response=await fetch(base+`/api/rooms/${code}/join`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:10})});const guest=await response.json();assert.equal(response.ok,true);
   await p.until('!document.querySelector("#resign").disabled');await p.click('#resign');await p.click('#confirm-resign');await p.until('document.querySelector("#play-again")!==null');await p.reachable('#play-again');await p.click('#play-again');
-  assert.equal(await p.evaluate('document.body.dataset.screen'),'lobby');assert.equal(await p.evaluate('sessionStorage.getItem("little-kingdoms-room")'),null);await p.reachable('#create-room');await p.click('#create-room');await p.until(`document.querySelector("#active-room-code").textContent.length===6&&document.querySelector("#active-room-code").textContent!==${JSON.stringify(code)}`);
+  await p.until('!!document.querySelector("#result-rematch [data-rematch-action=cancel]")&&!document.querySelector("#result-rematch [data-rematch-action=cancel]").disabled');await p.click('#result-lobby');await p.click('#room-leave');await p.until('document.body.dataset.screen==="lobby"');assert.equal(await p.evaluate('sessionStorage.getItem("little-kingdoms-room")'),null);await p.reachable('#create-room');await p.click('#create-room');await p.until(`document.querySelector("#active-room-code").textContent.length===6&&document.querySelector("#active-room-code").textContent!==${JSON.stringify(code)}`);
   const old=await(await fetch(base+`/api/rooms/${code}`,{headers:{Authorization:'Bearer '+guest.token}})).json();assert.equal(old.state.winner,guest.color,'old result remains available to the other player');
   assert.deepEqual(p.errors,[]);
   console.log('Restart checks passed: 5 phone/landscape/PC sizes; visible result actions, closed/reloaded results, win/loss/capture/resignation/scoring/simultaneous endings, active cancellation and restart during level-10 thinking, distinct match IDs, and fresh online rooms preserving the previous result.');
