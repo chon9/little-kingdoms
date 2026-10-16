@@ -29,7 +29,7 @@ try{
   const scan=async label=>{await wait(80);const result=await evaluate(`(()=>{
     const found=[],visible=e=>{if(!e||e.closest('script,style,svg,[hidden],[aria-hidden="true"],[data-user-content],[data-l10n-skip],.board-coordinates,.side-coordinates'))return false;const c=getComputedStyle(e);return c.display!=='none'&&c.visibility!=='hidden'&&e.getClientRects().length>0;};
     const english=s=>/[A-Za-z]{2,}/.test(s.replace(/\\b(?:XP|AI|PDF|MP3|WebView2|APK|F11|Alt|Enter|Escape|Ctrl|Shift|Tab|W|L|EN)\\b/g,''));
-    const tree=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);while(tree.nextNode()){const n=tree.currentNode,e=n.parentElement,t=n.nodeValue.trim().replace(/\\s+/g,' ');let check=t;if(e.matches('.comic-board-label'))check=check.replace(/\\b[A-I]{2,9}\\b/g,'');if(e.matches('.comic-source a'))check=check.replace('Great Kingdom','');if(e.closest('.music-credit'))check=check.replace(/Tozan|CC0 1\\.0/g,'');if(t&&visible(e)&&english(check))found.push({kind:'text',selector:e.id?'#'+e.id:e.className||e.tagName,text:t});}
+    const tree=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);while(tree.nextNode()){const n=tree.currentNode,e=n.parentElement,t=n.nodeValue.trim().replace(/\\s+/g,' ');let check=t;if(e.matches('.comic-board-label'))check=check.replace(/\\b[A-I]{2,9}\\b/g,'');if(e.matches('.comic-source a'))check=check.replace('Great Kingdom','');if(e.closest('.music-credit'))check=check.replace(/Tozan|CC0(?: 1\\.0)?/g,'');if(t&&visible(e)&&english(check))found.push({kind:'text',selector:e.id?'#'+e.id:e.className||e.tagName,text:t});}
     for(const e of document.querySelectorAll('[aria-label],[title],[placeholder]'))if(visible(e))for(const a of ['aria-label','title','placeholder']){const t=e.getAttribute(a),nickname=e.matches('.commander-card-top')?e.querySelector('.commander-summary-name strong')?.textContent:null,check=nickname?t?.split(nickname).join(''):t;if(check&&english(check))found.push({kind:a,selector:e.id?'#'+e.id:e.className||e.tagName,text:t});}
     return found;
   })()`);leaks.push({screen:label,items:result});return result;};
@@ -79,7 +79,7 @@ try{
   assert.deepEqual(errors,[],'No uncaught browser exceptions');
   // Check translations and the Chinese book from the offline installation cache.
   await evaluate('navigator.serviceWorker.ready');
-  await until(`(async()=>{const c=await caches.open('little-kingdoms-v2.4.1');return !!(await c.match('/locales/zh-rules.js'))&&!!(await c.match('/assets/little-kingdoms-comic-rules-zh-Hans.pdf'));})()`);
+  await until(`(async()=>{const c=await caches.open('little-kingdoms-v2.5.1');return !!(await c.match('/locales/zh-rules.js'))&&!!(await c.match('/assets/little-kingdoms-comic-rules-zh-Hans.pdf'));})()`);
   await send('Network.enable');await send('Network.clearBrowserCache');await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
   await navigate();assert.equal(await evaluate('document.documentElement.lang'),'zh-Hans');await scan('offline-battle');
   await switchLanguage('en');await switchLanguage('zh-Hans');assert.deepEqual(await evaluate('JSON.parse(localStorage.getItem("little-kingdoms-save")).state'),state,'offline language switching preserves the match');

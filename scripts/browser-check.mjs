@@ -121,7 +121,7 @@ try{
   await mobile.click('#battle-back');await mobile.screenshot('mobile-lobby');await mobile.click('#resume');
   // Verify the service worker actually launches the game offline from its cache.
   await mobile.evaluate('navigator.serviceWorker.ready');
-  await mobile.until(`(async()=>{const c=await caches.open('little-kingdoms-v2.4.1');return !!(await c.match('/assets/dm-sans.woff2'));})()`);
+  await mobile.until(`(async()=>{const c=await caches.open('little-kingdoms-v2.5.1');return !!(await c.match('/assets/dm-sans.woff2'));})()`);
   await mobile.send('Network.enable');await mobile.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await mobile.send('Page.reload');await wait(200);await mobile.until('document.querySelectorAll(".cell").length===81');
   await mobile.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
@@ -153,7 +153,7 @@ try{
   assert.equal(await progress.evaluate('document.querySelector("#cutin-line").textContent.includes("I stand by my oath")'),true);
   await wait(350);await progress.screenshot('anime-cutin');
   await progress.until('document.querySelector("#game-music").currentTime>0.1');
-  const music=await progress.evaluate('({duration:document.querySelector("#game-music").duration,loop:document.querySelector("#game-music").loop})');assert.ok(music.duration>192&&music.duration<193);assert.equal(music.loop,true);
+  const music=await progress.evaluate('({duration:document.querySelector("#game-music").duration,loop:document.querySelector("#game-music").loop})');assert.ok(music.duration>283&&music.duration<285);assert.equal(music.loop,false);
   await progress.click('#sound');assert.equal(await progress.evaluate('document.querySelector("#game-music").paused'),true);
   await progress.click('#settings-nav');
   await progress.evaluate('document.querySelector("#music-volume").value=22;document.querySelector("#music-volume").dispatchEvent(new Event("input"))');

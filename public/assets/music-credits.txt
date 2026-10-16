@@ -1,19 +1,40 @@
-BACKGROUND MUSIC
+BACKGROUND MUSIC / 背景音乐
 
-Title: Asianoriental2
+All four recordings are explicitly released as CC0 1.0 Universal on their
+individual creator pages. Verified 2026-10-16.
+所有曲目均在作者发布页明确标注 CC0 授权，可在安装后离线播放。
+License / 授权: https://creativecommons.org/publicdomain/zero/1.0/
+
+1. War Theme (version 2) / 烽火战歌
+Creator: Spring Spring
+Source: https://opengameart.org/content/war-theme
+Original: https://opengameart.org/sites/default/files/war%20theme%20ver%202_0.ogg
+Orchestral military/battle theme; full recording, approximately 4:44.
+
+2. Creed of Course / 出征之誓
+Creator: Eldritch Grim
+Source: https://opengameart.org/content/creed-of-course-0
+Original: https://opengameart.org/sites/default/files/creed_of_course_0.wav
+Flutes, violins and snare drums; full recording, approximately 1:36.
+Creator notice: Not required to atrtibute, use in game freely.
+
+3. Enemy Ship Approaching / 敌舰逼近
+Creator: yd
+Source: https://opengameart.org/content/enemy-ship-approaching
+Original: https://opengameart.org/sites/default/files/esa_0.ogg
+Tense approaching naval fight; full recording, approximately 0:42.
+Creator states that the included ocean-wave sound is also CC0.
+
+4. Asianoriental2 / 东方雅韵
 Creator: Tozan
 Source: https://opengameart.org/content/asianoriental2
-Original file: https://opengameart.org/sites/default/files/asianoriental2_0.ogg
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Verified on: 2026-10-16
+Original: https://opengameart.org/sites/default/files/asianoriental2_0.ogg
+Creator describes this recording as Chinese style; approximately 3:12.
+Creator attribution notice: cc0 atrib if you wish
 
-The creator describes this recording as Chinese style and lists CC0 on the
-source page, with the attribution notice "cc0 atrib if you wish".
-Used as Chinese-inspired atmosphere for the Three Kingdoms setting.
-This is not presented as an authentic historical Three Kingdoms recording.
-
-Bundled adaptation: MP3, stereo 44.1 kHz / 80 kbps, normalized to -20 LUFS
+Bundled adaptations: MP3, stereo 44.1 kHz / 80 kbps, normalized to -20 LUFS
 with short entrance/exit fades for comfortable repeated background playback.
-No remote music service, account, subscription or streaming is required.
-Credit is retained voluntarily; no endorsement by the creator is implied.
+The complete recordings are retained. No remote streaming, account or
+subscription is required. Credits are retained voluntarily.
+Used as game atmosphere; no historical authenticity or creator endorsement
+is implied. Original source titles and creator names are preserved above.

@@ -74,7 +74,7 @@ function controls(){
     const button=document.createElement('button');button.id='language-switch';button.className='language-switch';button.type='button';button.dataset.l10nSkip='';button.onclick=()=>setLanguage(language==='en'?'zh-Hans':'en');target.append(button);
   }
   const button=document.getElementById('language-switch');if(button){const label=language==='en'?'简':'EN',hint=language==='en'?'Switch to Simplified Chinese':'切换至英语';if(button.textContent!==label)button.textContent=label;if(button.getAttribute('aria-label')!==hint)button.setAttribute('aria-label',hint);if(button.title!==hint)button.title=hint;button.lang=language==='en'?'zh-Hans':'en';}
-  const settings=document.querySelector('.settings-list');
+  const settings=document.querySelector('.settings-language-slot')||document.querySelector('.settings-list');
   if(settings&&!document.getElementById('language-select')){
     const label=document.createElement('label');label.className='language-setting';label.dataset.l10nSkip='';label.innerHTML='<span></span><select id="language-select" aria-label="Language / 语言"><option value="en">English</option><option value="zh-Hans">简体中文</option></select>';label.querySelector('select').onchange=e=>setLanguage(e.target.value);settings.prepend(label);
   }
